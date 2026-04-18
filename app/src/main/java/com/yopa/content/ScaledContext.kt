@@ -12,7 +12,7 @@
  * subject to to the terms and conditions of the Apache License, Version 2.0.
  */
 
-package com.eightbit.content
+package com.yopa.content
 
 import android.content.Context
 import android.content.ContextWrapper
@@ -20,7 +20,7 @@ import android.content.res.Configuration
 import android.hardware.display.DisplayManager
 import android.view.ContextThemeWrapper
 import android.view.WindowManager
-import com.eightbit.io.Debug
+import com.yopa.io.Debug
 
 @Suppress("unused")
 class ScaledContext(base: Context) : ContextWrapper(base) {

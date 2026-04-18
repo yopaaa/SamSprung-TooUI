@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package com.eightbit.samsprung.drawer.panels
+package com.yopa.samsprung.drawer.panels
 
 import android.content.ContentValues
-import com.eightbit.samsprung.drawer.panels.WidgetSettings.BaseLauncherColumns
-import com.eightbit.samsprung.drawer.panels.WidgetSettings.Favorites
+import com.yopa.samsprung.drawer.panels.WidgetSettings.BaseLauncherColumns
+import com.yopa.samsprung.drawer.panels.WidgetSettings.Favorites
 
 /**
  * Represents an item in the launcher.

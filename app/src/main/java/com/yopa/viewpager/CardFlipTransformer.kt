@@ -15,7 +15,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package com.eightbit.viewpager
+package com.yopa.viewpager
 
 import android.view.View
 import androidx.recyclerview.widget.RecyclerView

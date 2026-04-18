@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.eightbit.samsprung.drawer.panels;
+package com.yopa.samsprung.drawer.panels;
 
 import android.appwidget.AppWidgetHost;
 import android.content.ComponentName;
@@ -35,8 +35,8 @@ import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.Log;
 
-import com.eightbit.samsprung.SamSprungOverlay;
-import com.eightbit.samsprung.drawer.panels.WidgetSettings.Favorites;
+import com.yopa.samsprung.SamSprungOverlay;
+import com.yopa.samsprung.drawer.panels.WidgetSettings.Favorites;
 
 import java.util.ArrayList;
 
@@ -45,7 +45,7 @@ public class WidgetProvider extends ContentProvider {
     
     private static final int DATABASE_VERSION = 6;
 
-    static final String AUTHORITY = "com.eightbit.samsprung.drawer.panels";
+    static final String AUTHORITY = "com.yopa.samsprung.drawer.panels";
     static final String EXTRA_BIND_SOURCES = AUTHORITY + ".bindsources";
     static final String EXTRA_BIND_TARGETS = AUTHORITY + ".bindtargets";
     

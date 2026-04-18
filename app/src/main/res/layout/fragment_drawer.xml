@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-        <com.eightbit.widget.NestedScrollableHost
+        <com.yopa.widget.NestedScrollableHost
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
@@ -19,5 +19,5 @@
                     android:paddingEnd="0dp"
                     android:scrollbarSize="0dp"
                     android:scrollbarStyle="outsideOverlay"/>
-        </com.eightbit.widget.NestedScrollableHost>
+        </com.yopa.widget.NestedScrollableHost>
 </androidx.constraintlayout.widget.ConstraintLayout>

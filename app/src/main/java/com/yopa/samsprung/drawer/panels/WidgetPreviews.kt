@@ -1,4 +1,4 @@
-package com.eightbit.samsprung.drawer.panels
+package com.yopa.samsprung.drawer.panels
 
 import android.appwidget.AppWidgetProviderInfo
 import android.content.ComponentName
@@ -23,9 +23,9 @@ import android.os.UserHandle
 import android.view.View
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
-import com.eightbit.samsprung.R
-import com.eightbit.samsprung.SamSprungOverlay
-import com.eightbit.samsprung.settings.Preferences
+import com.yopa.samsprung.R
+import com.yopa.samsprung.SamSprungOverlay
+import com.yopa.samsprung.settings.Preferences
 import java.io.File
 import java.lang.ref.SoftReference
 import java.lang.ref.WeakReference

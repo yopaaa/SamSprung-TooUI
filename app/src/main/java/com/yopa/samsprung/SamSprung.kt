@@ -12,14 +12,14 @@
  * subject to to the terms and conditions of the Apache License, Version 2.0.
  */
 
-package com.eightbit.samsprung
+package com.yopa.samsprung
 
 import android.app.Application
 import android.app.KeyguardManager
 import androidx.appcompat.app.AppCompatDelegate
-import com.eightbit.io.Debug
-import com.eightbit.samsprung.drawer.OrientationManager
-import com.eightbit.samsprung.settings.Preferences
+import com.yopa.io.Debug
+import com.yopa.samsprung.drawer.OrientationManager
+import com.yopa.samsprung.settings.Preferences
 import java.io.PrintWriter
 import java.io.StringWriter
 import kotlin.system.exitProcess

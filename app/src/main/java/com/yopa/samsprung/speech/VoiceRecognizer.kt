@@ -12,7 +12,7 @@
  * subject to to the terms and conditions of the Apache License, Version 2.0.
  */
 
-package com.eightbit.samsprung.speech
+package com.yopa.samsprung.speech
 
 import android.annotation.SuppressLint
 import android.content.Intent
@@ -20,7 +20,7 @@ import android.os.Bundle
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
-import com.eightbit.samsprung.BuildConfig
+import com.yopa.samsprung.BuildConfig
 
 @SuppressLint("SetJavaScriptEnabled")
 class VoiceRecognizer(private val listener: SpeechResultsListener?) : RecognitionListener {

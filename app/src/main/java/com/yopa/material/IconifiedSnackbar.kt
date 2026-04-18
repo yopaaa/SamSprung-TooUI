@@ -12,7 +12,7 @@
  * subject to to the terms and conditions of the Apache License, Version 2.0.
  */
 
-package com.eightbit.material
+package com.yopa.material
 
 import android.app.Activity
 import android.content.res.Configuration
@@ -24,7 +24,7 @@ import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.content.ContextCompat
 import androidx.core.view.updatePadding
 import androidx.transition.TransitionManager
-import com.eightbit.samsprung.R
+import com.yopa.samsprung.R
 import com.google.android.material.snackbar.Snackbar
 
 class IconifiedSnackbar @JvmOverloads constructor(activity: Activity, layout: ViewGroup? = null) {

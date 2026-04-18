@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name" translatable="false">SamSprung TooUI</string>
-
     <string name="build_hash" translatable="false">#%1$s</string>
     <string name="git_issue_title" translatable="false">[Logcat]: SamSprung #%1$s</string>
 </resources>

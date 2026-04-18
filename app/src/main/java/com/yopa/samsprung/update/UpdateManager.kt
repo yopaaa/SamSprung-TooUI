@@ -12,7 +12,7 @@
  * subject to to the terms and conditions of the Apache License, Version 2.0.
  */
 
-package com.eightbit.samsprung.update
+package com.yopa.samsprung.update
 
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -23,12 +23,12 @@ import android.provider.Settings
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
 import androidx.documentfile.provider.DocumentFile
-import com.eightbit.net.JSONExecutor
-import com.eightbit.os.Version
-import com.eightbit.samsprung.BuildConfig
-import com.eightbit.samsprung.SamSprung
-import com.eightbit.samsprung.organization
-import com.eightbit.samsprung.settings.CoverPreferences
+import com.yopa.net.JSONExecutor
+import com.yopa.os.Version
+import com.yopa.samsprung.BuildConfig
+import com.yopa.samsprung.SamSprung
+import com.yopa.samsprung.organization
+import com.yopa.samsprung.settings.CoverPreferences
 import com.google.android.play.core.appupdate.AppUpdateInfo
 import com.google.android.play.core.appupdate.AppUpdateManager
 import com.google.android.play.core.appupdate.AppUpdateManagerFactory

@@ -12,7 +12,7 @@
  * subject to to the terms and conditions of the Apache License, Version 2.0.
  */
 
-package com.eightbit.samsprung
+package com.yopa.samsprung
 
 import android.annotation.SuppressLint
 import android.app.*
@@ -26,11 +26,11 @@ import android.os.IBinder
 import android.provider.Settings
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
-import com.eightbit.app.CoverOptions
-import com.eightbit.content.ScaledContext
-import com.eightbit.os.Version
-import com.eightbit.samsprung.drawer.OrientationManager
-import com.eightbit.samsprung.settings.Preferences
+import com.yopa.app.CoverOptions
+import com.yopa.content.ScaledContext
+import com.yopa.os.Version
+import com.yopa.samsprung.drawer.OrientationManager
+import com.yopa.samsprung.settings.Preferences
 
 class OnBroadcastService : Service() {
 

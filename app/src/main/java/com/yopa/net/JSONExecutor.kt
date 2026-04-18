@@ -12,7 +12,7 @@
  * subject to to the terms and conditions of the Apache License, Version 2.0.
  */
 
-package com.eightbit.net
+package com.yopa.net
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

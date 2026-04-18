@@ -12,7 +12,7 @@
  * subject to to the terms and conditions of the Apache License, Version 2.0.
  */
 
-package com.eightbit.samsprung.drawer
+package com.yopa.samsprung.drawer
 
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment

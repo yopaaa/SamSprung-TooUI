@@ -12,7 +12,7 @@
  * subject to to the terms and conditions of the Apache License, Version 2.0.
  */
 
-package com.eightbit.samsprung.drawer
+package com.yopa.samsprung.drawer
 
 import android.annotation.SuppressLint
 import android.app.*
@@ -45,16 +45,16 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.eightbit.app.CoverOptions
-import com.eightbit.content.ScaledContext
-import com.eightbit.os.Version
-import com.eightbit.samsprung.NotificationReceiver
-import com.eightbit.samsprung.R
-import com.eightbit.samsprung.SamSprung
-import com.eightbit.samsprung.SamSprungOverlay
-import com.eightbit.samsprung.settings.Preferences
-import com.eightbit.view.OnSwipeTouchListener
-import com.eightbit.widget.RecyclerViewTouch
+import com.yopa.app.CoverOptions
+import com.yopa.content.ScaledContext
+import com.yopa.os.Version
+import com.yopa.samsprung.NotificationReceiver
+import com.yopa.samsprung.R
+import com.yopa.samsprung.SamSprung
+import com.yopa.samsprung.SamSprungOverlay
+import com.yopa.samsprung.settings.Preferences
+import com.yopa.view.OnSwipeTouchListener
+import com.yopa.widget.RecyclerViewTouch
 import java.util.*
 
 class NotificationFragment : Fragment(), NotificationAdapter.OnNoticeClickListener {

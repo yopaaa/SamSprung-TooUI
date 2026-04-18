@@ -12,7 +12,7 @@
  * subject to to the terms and conditions of the Apache License, Version 2.0.
  */
 
-package com.eightbit.samsprung.drawer
+package com.yopa.samsprung.drawer
 
 import android.annotation.SuppressLint
 import android.app.*
@@ -31,12 +31,12 @@ import androidx.appcompat.widget.AppCompatImageView
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
-import com.eightbit.app.CoverOptions
-import com.eightbit.content.ScaledContext
-import com.eightbit.os.Version
-import com.eightbit.samsprung.*
-import com.eightbit.samsprung.settings.Preferences
-import com.eightbit.view.OnSwipeTouchListener
+import com.yopa.app.CoverOptions
+import com.yopa.content.ScaledContext
+import com.yopa.os.Version
+import com.yopa.samsprung.*
+import com.yopa.samsprung.settings.Preferences
+import com.yopa.view.OnSwipeTouchListener
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 
 class AppDisplayListener : Service() {

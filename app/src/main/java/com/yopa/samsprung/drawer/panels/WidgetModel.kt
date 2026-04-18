@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-package com.eightbit.samsprung.drawer.panels
+package com.yopa.samsprung.drawer.panels
 
 import android.content.ContentValues
 import android.content.Context
 import android.os.Process
 import android.provider.BaseColumns
-import com.eightbit.samsprung.SamSprungOverlay
-import com.eightbit.samsprung.drawer.panels.WidgetSettings.BaseLauncherColumns
-import com.eightbit.samsprung.drawer.panels.WidgetSettings.Favorites
+import com.yopa.samsprung.SamSprungOverlay
+import com.yopa.samsprung.drawer.panels.WidgetSettings.BaseLauncherColumns
+import com.yopa.samsprung.drawer.panels.WidgetSettings.Favorites
 import java.lang.ref.WeakReference
 
 /**

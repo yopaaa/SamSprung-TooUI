@@ -12,7 +12,7 @@
  * subject to to the terms and conditions of the Apache License, Version 2.0.
  */
 
-package com.eightbit.samsprung
+package com.yopa.samsprung
 
 import android.annotation.SuppressLint
 import android.content.ComponentName

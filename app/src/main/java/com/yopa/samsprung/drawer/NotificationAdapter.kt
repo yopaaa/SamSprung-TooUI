@@ -12,7 +12,7 @@
  * subject to to the terms and conditions of the Apache License, Version 2.0.
  */
 
-package com.eightbit.samsprung.drawer
+package com.yopa.samsprung.drawer
 
 import android.annotation.SuppressLint
 import android.app.Activity
@@ -39,9 +39,9 @@ import androidx.core.graphics.drawable.toBitmap
 import androidx.core.view.isVisible
 import androidx.fragment.app.FragmentActivity
 import androidx.recyclerview.widget.RecyclerView
-import com.eightbit.samsprung.NotificationReceiver
-import com.eightbit.samsprung.R
-import com.eightbit.samsprung.settings.Preferences
+import com.yopa.samsprung.NotificationReceiver
+import com.yopa.samsprung.R
+import com.yopa.samsprung.settings.Preferences
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

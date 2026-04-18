@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.eightbit.widget
+package com.yopa.widget
 
 import android.content.Context
 import android.util.AttributeSet

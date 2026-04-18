@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package com.eightbit.samsprung.drawer.panels
+package com.yopa.samsprung.drawer.panels
 
 import android.appwidget.AppWidgetHostView
 import android.content.Context
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
-import com.eightbit.samsprung.R
+import com.yopa.samsprung.R
 
 /**
  * {@inheritDoc}

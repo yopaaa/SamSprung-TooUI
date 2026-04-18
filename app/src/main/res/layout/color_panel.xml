@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <merge
     xmlns:android="http://schemas.android.com/apk/res/android">
-<com.eightbit.view.AnimatedLinearLayout
+<com.yopa.view.AnimatedLinearLayout
     android:id="@+id/color_panel"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -93,5 +93,5 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="4dp"/>
 
-</com.eightbit.view.AnimatedLinearLayout>
+</com.yopa.view.AnimatedLinearLayout>
 </merge>

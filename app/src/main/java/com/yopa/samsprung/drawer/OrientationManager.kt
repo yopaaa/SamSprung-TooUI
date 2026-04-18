@@ -1,4 +1,4 @@
-package com.eightbit.samsprung.drawer
+package com.yopa.samsprung.drawer
 
 import android.content.Context
 import android.content.pm.ActivityInfo

@@ -5,7 +5,7 @@ plugins {
 
 android {
     defaultConfig {
-        applicationId 'com.eightbit.samsprung'
+        applicationId 'com.yopa.samsprung'
         compileSdk 35
         minSdk 30
         targetSdk 35
@@ -73,7 +73,9 @@ android {
         debug {
             initWith buildTypes.release
             debuggable true
+            signingConfig signingConfigs.debug
         }
+
     }
 
     try {

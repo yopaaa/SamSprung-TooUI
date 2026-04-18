@@ -12,7 +12,7 @@
  * subject to to the terms and conditions of the Apache License, Version 2.0.
  */
 
-package com.eightbit.samsprung.update
+package com.yopa.samsprung.update
 
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -20,10 +20,10 @@ import android.content.Intent
 import android.content.pm.PackageInstaller
 import android.os.Parcelable
 import android.widget.Toast
-import com.eightbit.os.Version
-import com.eightbit.samsprung.BuildConfig
-import com.eightbit.samsprung.OnBroadcastService
-import com.eightbit.samsprung.SamSprung
+import com.yopa.os.Version
+import com.yopa.samsprung.BuildConfig
+import com.yopa.samsprung.OnBroadcastService
+import com.yopa.samsprung.SamSprung
 
 class UpdateReceiver : BroadcastReceiver() {
 

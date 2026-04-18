@@ -12,13 +12,13 @@
  * subject to to the terms and conditions of the Apache License, Version 2.0.
  */
 
-package com.eightbit.samsprung.update
+package com.yopa.samsprung.update
 
 import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import com.eightbit.content.ScaledContext
-import com.eightbit.samsprung.R
+import com.yopa.content.ScaledContext
+import com.yopa.samsprung.R
 
 
 class UpdateShimActivity : AppCompatActivity() {

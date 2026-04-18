@@ -170,8 +170,8 @@
         </provider>
 
         <provider
-            android:name="com.eightbit.samsprung.drawer.panels.WidgetProvider"
-            android:authorities="com.eightbit.samsprung.drawer.panels"
+            android:name="${applicationId}.drawer.panels.WidgetProvider"
+            android:authorities="${applicationId}.drawer.panels"
             android:writePermission="samsprung.permission.WRITE_SETTINGS"
             android:readPermission="samsprung.permission.READ_SETTINGS" />
     </application>

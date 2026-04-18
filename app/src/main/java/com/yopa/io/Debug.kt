@@ -12,17 +12,17 @@
  * subject to to the terms and conditions of the Apache License, Version 2.0.
  */
 
-package com.eightbit.io
+package com.yopa.io
 
 import android.annotation.SuppressLint
 import android.content.*
 import android.net.Uri
 import android.os.Build
-import com.eightbit.samsprung.BuildConfig
-import com.eightbit.samsprung.R
-import com.eightbit.samsprung.SamSprung
-import com.eightbit.samsprung.organization
-import com.eightbit.samsprung.settings.CoverPreferences
+import com.yopa.samsprung.BuildConfig
+import com.yopa.samsprung.R
+import com.yopa.samsprung.SamSprung
+import com.yopa.samsprung.organization
+import com.yopa.samsprung.settings.CoverPreferences
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

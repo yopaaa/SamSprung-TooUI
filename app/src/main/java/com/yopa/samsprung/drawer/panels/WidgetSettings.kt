@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.eightbit.samsprung.drawer.panels
+package com.yopa.samsprung.drawer.panels
 
 import android.net.Uri
 import android.provider.BaseColumns

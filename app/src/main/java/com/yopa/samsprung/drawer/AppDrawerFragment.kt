@@ -12,7 +12,7 @@
  * subject to to the terms and conditions of the Apache License, Version 2.0.
  */
 
-package com.eightbit.samsprung.drawer
+package com.yopa.samsprung.drawer
 
 import android.annotation.SuppressLint
 import android.app.SearchManager
@@ -39,14 +39,14 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.eightbit.content.ScaledContext
-import com.eightbit.io.Debug
-import com.eightbit.pm.PackageRetriever
-import com.eightbit.samsprung.R
-import com.eightbit.samsprung.SamSprungOverlay
-import com.eightbit.samsprung.settings.Preferences
-import com.eightbit.view.OnSwipeTouchListener
-import com.eightbit.widget.RecyclerViewTouch
+import com.yopa.content.ScaledContext
+import com.yopa.io.Debug
+import com.yopa.pm.PackageRetriever
+import com.yopa.samsprung.R
+import com.yopa.samsprung.SamSprungOverlay
+import com.yopa.samsprung.settings.Preferences
+import com.yopa.view.OnSwipeTouchListener
+import com.yopa.widget.RecyclerViewTouch
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

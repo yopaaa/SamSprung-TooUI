@@ -12,7 +12,7 @@
  * subject to to the terms and conditions of the Apache License, Version 2.0.
  */
 
-package com.eightbit.samsprung.settings
+package com.yopa.samsprung.settings
 
 import android.annotation.SuppressLint
 import android.content.SharedPreferences
@@ -26,7 +26,7 @@ import android.widget.Switch
 import android.widget.TextView
 import androidx.appcompat.widget.AppCompatImageView
 import androidx.recyclerview.widget.RecyclerView
-import com.eightbit.samsprung.R
+import com.yopa.samsprung.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

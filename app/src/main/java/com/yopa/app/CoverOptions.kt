@@ -12,7 +12,7 @@
  * subject to to the terms and conditions of the Apache License, Version 2.0.
  */
 
-package com.eightbit.app
+package com.yopa.app
 
 import android.app.ActivityOptions
 import android.content.Intent

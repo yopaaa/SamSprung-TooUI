@@ -12,7 +12,7 @@
  * subject to to the terms and conditions of the Apache License, Version 2.0.
  */
 
-package com.eightbit.samsprung
+package com.yopa.samsprung
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -65,19 +65,19 @@ import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import androidx.window.java.layout.WindowInfoTrackerCallbackAdapter
 import androidx.window.layout.WindowInfoTracker
-import com.eightbit.content.ScaledContext
-import com.eightbit.io.Debug
-import com.eightbit.material.IconifiedSnackbar
-import com.eightbit.os.Version
-import com.eightbit.samsprung.drawer.CoverStateAdapter
-import com.eightbit.samsprung.drawer.LauncherManager
-import com.eightbit.samsprung.drawer.PanelWidgetManager
-import com.eightbit.samsprung.drawer.panels.*
-import com.eightbit.samsprung.settings.Preferences
-import com.eightbit.samsprung.speech.VoiceRecognizer
-import com.eightbit.samsprung.update.UpdateManager
-import com.eightbit.view.AnimatedLinearLayout
-import com.eightbit.viewpager.*
+import com.yopa.content.ScaledContext
+import com.yopa.io.Debug
+import com.yopa.material.IconifiedSnackbar
+import com.yopa.os.Version
+import com.yopa.samsprung.drawer.CoverStateAdapter
+import com.yopa.samsprung.drawer.LauncherManager
+import com.yopa.samsprung.drawer.PanelWidgetManager
+import com.yopa.samsprung.drawer.panels.*
+import com.yopa.samsprung.settings.Preferences
+import com.yopa.samsprung.speech.VoiceRecognizer
+import com.yopa.samsprung.update.UpdateManager
+import com.yopa.view.AnimatedLinearLayout
+import com.yopa.viewpager.*
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar

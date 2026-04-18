@@ -1,4 +1,4 @@
-package com.eightbit.samsprung
+package com.yopa.samsprung
 
 import androidx.core.util.Consumer
 import androidx.window.layout.FoldingFeature

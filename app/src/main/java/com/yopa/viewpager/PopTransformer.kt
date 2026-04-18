@@ -1,4 +1,4 @@
-package com.eightbit.viewpager
+package com.yopa.viewpager
 
 import android.view.View
 import androidx.viewpager2.widget.ViewPager2

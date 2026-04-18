@@ -1,4 +1,4 @@
-package com.eightbit.samsprung.drawer
+package com.yopa.samsprung.drawer
 
 import android.app.PendingIntent
 import android.content.ComponentName
@@ -14,12 +14,12 @@ import android.os.Handler
 import android.os.Looper
 import android.os.Process
 import androidx.appcompat.app.AppCompatActivity
-import com.eightbit.app.CoverOptions
-import com.eightbit.content.ScaledContext
-import com.eightbit.io.Debug
-import com.eightbit.samsprung.SamSprung
-import com.eightbit.samsprung.SamSprungOverlay
-import com.eightbit.samsprung.settings.Preferences
+import com.yopa.app.CoverOptions
+import com.yopa.content.ScaledContext
+import com.yopa.io.Debug
+import com.yopa.samsprung.SamSprung
+import com.yopa.samsprung.SamSprungOverlay
+import com.yopa.samsprung.settings.Preferences
 
 class LauncherManager(private val overlay: SamSprungOverlay) {
 

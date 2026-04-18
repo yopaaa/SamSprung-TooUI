@@ -1,4 +1,4 @@
-package com.eightbit.samsprung.drawer
+package com.yopa.samsprung.drawer
 
 import android.annotation.SuppressLint
 import android.appwidget.AppWidgetHost
@@ -18,11 +18,11 @@ import androidx.appcompat.widget.AppCompatImageView
 import androidx.core.graphics.drawable.toBitmap
 import androidx.core.view.children
 import androidx.viewpager2.widget.ViewPager2
-import com.eightbit.content.ScaledContext
-import com.eightbit.os.Version
-import com.eightbit.samsprung.R
-import com.eightbit.samsprung.SamSprungOverlay
-import com.eightbit.samsprung.drawer.panels.*
+import com.yopa.content.ScaledContext
+import com.yopa.os.Version
+import com.yopa.samsprung.R
+import com.yopa.samsprung.SamSprungOverlay
+import com.yopa.samsprung.drawer.panels.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

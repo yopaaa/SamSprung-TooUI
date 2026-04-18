@@ -12,7 +12,7 @@
  * subject to to the terms and conditions of the Apache License, Version 2.0.
  */
 
-package com.eightbit.widget
+package com.yopa.widget
 
 import android.graphics.Canvas
 import androidx.recyclerview.widget.ItemTouchHelper

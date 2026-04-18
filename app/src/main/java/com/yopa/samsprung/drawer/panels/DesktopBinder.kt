@@ -1,10 +1,10 @@
-package com.eightbit.samsprung.drawer.panels
+package com.yopa.samsprung.drawer.panels
 
 import android.os.Handler
 import android.os.Looper
 import android.os.Message
 import android.os.MessageQueue
-import com.eightbit.samsprung.SamSprungOverlay
+import com.yopa.samsprung.SamSprungOverlay
 import java.lang.ref.SoftReference
 import java.util.LinkedList
 

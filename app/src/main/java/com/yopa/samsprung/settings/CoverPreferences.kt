@@ -12,7 +12,7 @@
  * subject to to the terms and conditions of the Apache License, Version 2.0.
  */
 
-package com.eightbit.samsprung.settings
+package com.yopa.samsprung.settings
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -66,14 +66,14 @@ import androidx.drawerlayout.widget.DrawerLayout
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.eightbit.content.ScaledContext
-import com.eightbit.io.Debug
-import com.eightbit.material.IconifiedSnackbar
-import com.eightbit.os.Version
-import com.eightbit.pm.PackageRetriever
-import com.eightbit.samsprung.*
-import com.eightbit.samsprung.update.UpdateManager
-import com.eightbit.view.AnimatedLinearLayout
+import com.yopa.content.ScaledContext
+import com.yopa.io.Debug
+import com.yopa.material.IconifiedSnackbar
+import com.yopa.os.Version
+import com.yopa.pm.PackageRetriever
+import com.yopa.samsprung.*
+import com.yopa.samsprung.update.UpdateManager
+import com.yopa.view.AnimatedLinearLayout
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.snackbar.Snackbar
 import eightbitlab.com.blurview.BlurView

@@ -1,4 +1,4 @@
-package com.eightbit.samsprung.settings
+package com.yopa.samsprung.settings
 
 import android.annotation.SuppressLint
 import android.content.Intent
@@ -14,10 +14,10 @@ import androidx.appcompat.view.ContextThemeWrapper
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import com.android.billingclient.api.*
-import com.eightbit.material.IconifiedSnackbar
-import com.eightbit.samsprung.BuildConfig
-import com.eightbit.samsprung.R
-import com.eightbit.samsprung.SamSprung
+import com.yopa.material.IconifiedSnackbar
+import com.yopa.samsprung.BuildConfig
+import com.yopa.samsprung.R
+import com.yopa.samsprung.SamSprung
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

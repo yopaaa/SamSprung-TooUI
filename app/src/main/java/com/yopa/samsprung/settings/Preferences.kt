@@ -1,4 +1,4 @@
-package com.eightbit.samsprung.settings
+package com.yopa.samsprung.settings
 
 object Preferences {
     const val prefsValue: String = "samsprung.preferences"

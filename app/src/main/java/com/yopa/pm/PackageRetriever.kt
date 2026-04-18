@@ -12,7 +12,7 @@
  * subject to to the terms and conditions of the Apache License, Version 2.0.
  */
 
-package com.eightbit.pm
+package com.yopa.pm
 
 import android.app.AppOpsManager
 import android.app.usage.UsageEvents
@@ -24,9 +24,9 @@ import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
 import android.os.Process
 import androidx.appcompat.app.AppCompatActivity
-import com.eightbit.os.Version
-import com.eightbit.samsprung.BuildConfig
-import com.eightbit.samsprung.settings.Preferences
+import com.yopa.os.Version
+import com.yopa.samsprung.BuildConfig
+import com.yopa.samsprung.settings.Preferences
 import java.util.*
 
 class PackageRetriever(val context: Context) {
