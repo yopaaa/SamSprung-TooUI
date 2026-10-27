@@ -36,6 +36,7 @@ import com.yopa.content.ScaledContext
 import com.yopa.os.Version
 import com.yopa.samsprung.*
 import com.yopa.samsprung.settings.Preferences
+import com.yopa.view.EdgeBackGestureManager
 import com.yopa.view.OnSwipeTouchListener
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 
@@ -49,6 +50,7 @@ class AppDisplayListener : Service() {
     private var mDisplayListener: DisplayManager.DisplayListener? = null
     private lateinit var floatView: View
     private lateinit var bottomSheetBehavior: BottomSheetBehavior<View>
+    private var edgeGestureManager: EdgeBackGestureManager? = null
 
     private val vibrator by lazy {
         if (Version.isSnowCone)
@@ -191,6 +193,9 @@ class AppDisplayListener : Service() {
 
         with (displayContext.getSystemService(WINDOW_SERVICE) as WindowManager) {
             addView(floatView, params)
+            edgeGestureManager?.detach()
+            edgeGestureManager = EdgeBackGestureManager(displayContext, this)
+            edgeGestureManager?.attach()
         }
         Handler(Looper.getMainLooper()).postDelayed({
             bottomSheetBehavior.state = BottomSheetBehavior.STATE_COLLAPSED
@@ -311,6 +316,8 @@ class AppDisplayListener : Service() {
     }
 
     fun onDismissOverlay() {
+        edgeGestureManager?.detach()
+        edgeGestureManager = null
         if (prefs.getBoolean(Preferences.prefRotate, false))
             OrientationManager(this).removeOrientationLayout()
         try {

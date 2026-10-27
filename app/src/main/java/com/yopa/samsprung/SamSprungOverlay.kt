@@ -77,6 +77,7 @@ import com.yopa.samsprung.settings.Preferences
 import com.yopa.samsprung.speech.VoiceRecognizer
 import com.yopa.samsprung.update.UpdateManager
 import com.yopa.view.AnimatedLinearLayout
+import com.yopa.view.EdgeBackGestureManager
 import com.yopa.viewpager.*
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -136,6 +137,7 @@ class SamSprungOverlay : AppCompatActivity() {
     private lateinit var bottomSheetBehaviorMain: BottomSheetBehavior<View>
     private lateinit var viewPager: ViewPager2
     private var pagerAdapter: FragmentStateAdapter = CoverStateAdapter(this)
+    private var edgeGestureManager: EdgeBackGestureManager? = null
 
     private val vibrator: Vibrator by lazy {
         if (Version.isSnowCone)
@@ -209,6 +211,16 @@ class SamSprungOverlay : AppCompatActivity() {
 
         ScaledContext(this).internal(1.5f).setTheme(R.style.Theme_Launcher_NoActionBar)
         setContentView(R.layout.home_main_view)
+
+        edgeGestureManager?.detach()
+        edgeGestureManager = EdgeBackGestureManager(this, windowManager) {
+            if (bottomSheetBehaviorMain.state == BottomSheetBehavior.STATE_EXPANDED) {
+                closeMainDrawer()
+            } else {
+                AccessibilityObserver.performBackAction()
+            }
+        }
+        edgeGestureManager?.attach()
 
         IntentFilter().apply {
             addAction(Intent.ACTION_SCREEN_OFF)
@@ -1163,6 +1175,8 @@ class SamSprungOverlay : AppCompatActivity() {
     }
 
     fun onStopOverlay() {
+        edgeGestureManager?.detach()
+        edgeGestureManager = null
         try { camManager.unregisterTorchCallback(torchCallback) } catch (_: Exception) { }
         timeoutHandler.removeCallbacksAndMessages(null)
         fabShowHandler.removeCallbacksAndMessages(null)
