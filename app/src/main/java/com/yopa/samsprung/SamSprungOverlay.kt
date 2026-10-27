@@ -310,14 +310,7 @@ class SamSprungOverlay : AppCompatActivity() {
             override fun onTorchModeChanged(cameraId: String, enabled: Boolean) {
                 super.onTorchModeChanged(cameraId, enabled)
                 if (cameraId == camManager.cameraIdList[0]) isTorchEnabled = enabled
-                val torchMenu = toolbar.menu.findItem(R.id.toggle_torch)
-                if (isTorchEnabled) {
-                    torchMenu.setIcon(R.drawable.ic_flashlight_on_24dp)
-                } else {
-                    torchMenu.setIcon(R.drawable.ic_flashlight_off_24dp)
-                }
-                torchMenu.icon?.setTint(prefs.getInt(Preferences.prefColors,
-                    Color.rgb(255, 255, 255)))
+                runOnUiThread { updateQuickTilesState() }
             }
         }
         camManager.registerTorchCallback(torchCallback, null)
@@ -351,178 +344,112 @@ class SamSprungOverlay : AppCompatActivity() {
         batteryLevel.setTextColor(color)
         clock.setTextColor(color)
 
-        val buttonRotation = findViewById<AppCompatImageView>(R.id.button_rotation)
-        buttonRotation.setOnClickListener {
-            if (prefs.getBoolean(Preferences.prefReacts, true))
-                vibrator.vibrate(effectClick)
-            val unlocked = !prefs.getBoolean(Preferences.prefRotate, false)
-            if (unlocked) {
-                val lockBar: Snackbar = IconifiedSnackbar(
+        val keyguardManager = (getSystemService(KEYGUARD_SERVICE) as KeyguardManager)
+
+        // Setup 2-Row Quick Tiles
+        findViewById<View>(R.id.tile_wifi)?.setOnClickListener {
+            if (prefs.getBoolean(Preferences.prefReacts, true)) vibrator.vibrate(effectClick)
+            val buttonAuth = findViewById<View>(R.id.button_auth)
+            if (buttonAuth == null || buttonAuth.isInvisible || !keyguardManager.isDeviceLocked) {
+                wifiEnabler.launch(Intent(Settings.Panel.ACTION_INTERNET_CONNECTIVITY))
+            } else {
+                val authBar: Snackbar = IconifiedSnackbar(
                     this@SamSprungOverlay, coordinator
                 ).buildTickerBar(
-                    getString(R.string.rotation_lock),
-                    R.drawable.ic_screen_lock_rotation_24
+                    getString(R.string.auth_required),
+                    R.drawable.ic_fingerprint_24dp
                 )
-                lockBar.setAction(R.string.rotation_lock_action) {
-                    with(prefs.edit()) {
-                        putBoolean(Preferences.prefRotate, true)
-                        apply()
-                    }
-                    buttonRotation.setImageResource(R.drawable.ic_screen_lock_rotation_24)
+                authBar.setAction(R.string.auth_required_action) {
+                    onKeyguardClicked(keyguardManager, findViewById(R.id.button_auth))
                 }
-                lockBar.show()
+                authBar.show()
+            }
+        }
+
+        findViewById<View>(R.id.tile_bluetooth)?.setOnClickListener {
+            if (prefs.getBoolean(Preferences.prefReacts, true)) vibrator.vibrate(effectClick)
+            @Suppress("deprecation")
+            if (bluetoothAdapter.isEnabled) {
+                bluetoothAdapter.disable()
             } else {
-                with(prefs.edit()) {
-                    putBoolean(Preferences.prefRotate, false)
-                    apply()
-                }
-                buttonRotation.setImageResource(R.drawable.ic_screen_rotation_24)
+                bluetoothAdapter.enable()
             }
+            updateQuickTilesState()
         }
-        buttonRotation.setOnLongClickListener { view ->
-            Toast.makeText(
-                view.context, view.contentDescription, Toast.LENGTH_SHORT
-            ).show()
-            true
+
+        findViewById<View>(R.id.tile_sound)?.setOnClickListener {
+            if (prefs.getBoolean(Preferences.prefReacts, true)) vibrator.vibrate(effectClick)
+            if (audioManager.ringerMode == AudioManager.RINGER_MODE_NORMAL) {
+                audioManager.ringerMode = AudioManager.RINGER_MODE_SILENT
+            } else {
+                audioManager.ringerMode = AudioManager.RINGER_MODE_NORMAL
+            }
+            updateQuickTilesState()
         }
-        buttonRotation.setImageResource(
-            if (prefs.getBoolean(Preferences.prefRotate, false))
-                R.drawable.ic_screen_lock_rotation_24
-            else
-                R.drawable.ic_screen_rotation_24
-        )
 
-        val keyguardManager = (getSystemService(KEYGUARD_SERVICE) as KeyguardManager)
-        val buttonAuth = findViewById<AppCompatImageView>(R.id.button_auth)
-        buttonAuth.setOnClickListener {
-            onKeyguardClicked(keyguardManager, buttonAuth)
+        findViewById<View>(R.id.button_rotation)?.setOnClickListener {
+            if (prefs.getBoolean(Preferences.prefReacts, true)) vibrator.vibrate(effectClick)
+            val unlocked = !prefs.getBoolean(Preferences.prefRotate, false)
+            with(prefs.edit()) {
+                putBoolean(Preferences.prefRotate, unlocked)
+                apply()
+            }
+            updateQuickTilesState()
         }
-        buttonAuth.setOnLongClickListener { view ->
-            Toast.makeText(
-                view.context, view.contentDescription, Toast.LENGTH_SHORT
-            ).show()
-            true
+
+        findViewById<View>(R.id.tile_torch)?.setOnClickListener {
+            if (prefs.getBoolean(Preferences.prefReacts, true)) vibrator.vibrate(effectClick)
+            try {
+                camManager.setTorchMode(camManager.cameraIdList[0], !isTorchEnabled)
+            } catch (_: Exception) {}
         }
-        setKeyguardStatus(keyguardManager, buttonAuth)
 
-        toolbar.setOnMenuItemClickListener { item: MenuItem ->
-            when (item.itemId) {
-                R.id.toggle_wifi -> {
-                    if (buttonAuth.isInvisible) {
-                        wifiEnabler.launch(
-                            Intent(Settings.Panel.ACTION_INTERNET_CONNECTIVITY)
-                        )
-                    } else {
-                        val authBar: Snackbar = IconifiedSnackbar(
-                            this@SamSprungOverlay, coordinator
-                        ).buildTickerBar(
-                            getString(R.string.auth_required),
-                            R.drawable.ic_fingerprint_24dp
-                        )
-                        authBar.setAction(R.string.auth_required_action) {
-                            onKeyguardClicked(keyguardManager, buttonAuth)
-                        }
-                        authBar.show()
-                    }
-                    return@setOnMenuItemClickListener true
-                }
+        findViewById<View>(R.id.tile_dnd)?.setOnClickListener {
+            if (prefs.getBoolean(Preferences.prefReacts, true)) vibrator.vibrate(effectClick)
+            if (notificationManager.currentInterruptionFilter == NotificationManager.INTERRUPTION_FILTER_ALL) {
+                notificationManager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_NONE)
+            } else {
+                notificationManager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALL)
+            }
+            updateQuickTilesState()
+        }
 
-                R.id.toggle_bluetooth -> {
-                    @Suppress("deprecation")
-                    if (bluetoothAdapter.isEnabled) {
-                        bluetoothAdapter.disable()
-                        item.setIcon(R.drawable.ic_bluetooth_off_24dp)
-                    } else {
-                        bluetoothAdapter.enable()
-                        item.setIcon(R.drawable.ic_bluetooth_on_24dp)
-                    }
-                    item.icon?.setTint(color)
-                    return@setOnMenuItemClickListener true
+        findViewById<View>(R.id.tile_nfc)?.setOnClickListener {
+            if (prefs.getBoolean(Preferences.prefReacts, true)) vibrator.vibrate(effectClick)
+            val buttonAuth = findViewById<View>(R.id.button_auth)
+            if (buttonAuth == null || buttonAuth.isInvisible || !keyguardManager.isDeviceLocked) {
+                nfcEnabler.launch(Intent(Settings.Panel.ACTION_NFC))
+            } else {
+                val authBar: Snackbar = IconifiedSnackbar(
+                    this@SamSprungOverlay, coordinator
+                ).buildTickerBar(
+                    getString(R.string.auth_required),
+                    R.drawable.ic_fingerprint_24dp
+                )
+                authBar.setAction(R.string.auth_required_action) {
+                    onKeyguardClicked(keyguardManager, findViewById(R.id.button_auth))
                 }
-
-                R.id.toggle_nfc -> {
-                    if (buttonAuth.isInvisible) {
-                        nfcEnabler.launch(
-                            Intent(Settings.Panel.ACTION_NFC)
-                        )
-                    } else {
-                        val authBar: Snackbar = IconifiedSnackbar(
-                            this@SamSprungOverlay, coordinator
-                        ).buildTickerBar(
-                            getString(R.string.auth_required),
-                            R.drawable.ic_fingerprint_24dp
-                        )
-                        authBar.setAction(R.string.auth_required_action) {
-                            onKeyguardClicked(keyguardManager, buttonAuth)
-                        }
-                        authBar.show()
-                    }
-                    return@setOnMenuItemClickListener true
-                }
-
-                R.id.toggle_sound -> {
-                    if (audioManager.ringerMode == AudioManager.RINGER_MODE_NORMAL) {
-                        audioManager.ringerMode = AudioManager.RINGER_MODE_SILENT
-                        item.setIcon(R.drawable.ic_sound_off_24dp)
-                    } else {
-                        audioManager.ringerMode = AudioManager.RINGER_MODE_NORMAL
-                        item.setIcon(R.drawable.ic_sound_on_24dp)
-                    }
-                    item.icon?.setTint(color)
-                    return@setOnMenuItemClickListener true
-                }
-
-                R.id.toggle_dnd -> {
-                    if (notificationManager.currentInterruptionFilter ==
-                        NotificationManager.INTERRUPTION_FILTER_ALL
-                    ) {
-                        notificationManager.setInterruptionFilter(
-                            NotificationManager.INTERRUPTION_FILTER_NONE
-                        )
-                        item.setIcon(R.drawable.ic_do_not_disturb_on_24dp)
-                    } else {
-                        notificationManager.setInterruptionFilter(
-                            NotificationManager.INTERRUPTION_FILTER_ALL
-                        )
-                        item.setIcon(R.drawable.ic_do_not_disturb_off_24dp)
-                    }
-                    item.icon?.setTint(color)
-                    return@setOnMenuItemClickListener true
-                }
-
-                R.id.toggle_torch -> {
-                    camManager.setTorchMode(
-                        camManager.cameraIdList[0],
-                        !isTorchEnabled
-                    )
-                    return@setOnMenuItemClickListener true
-                }
-
-                R.id.toggle_widgets -> {
-                    widgetManager?.showAddDialog(viewPager)
-                    hideTopQuickPanel()
-                    return@setOnMenuItemClickListener false
-                }
-
-                else -> {
-                    return@setOnMenuItemClickListener false
-                }
+                authBar.show()
             }
         }
 
-        findViewById<AppCompatImageView>(R.id.button_close).apply {
-            setOnClickListener {
-                if (prefs.getBoolean(Preferences.prefReacts, true))
-                    vibrator.vibrate(effectClick)
-                hideTopQuickPanel()
-            }
-            setOnLongClickListener { view ->
-                Toast.makeText(
-                    view.context, view.contentDescription, Toast.LENGTH_SHORT
-                ).show()
-                true
+        findViewById<View>(R.id.button_auth)?.setOnClickListener {
+            if (prefs.getBoolean(Preferences.prefReacts, true)) vibrator.vibrate(effectClick)
+            val keyguardManager = getSystemService(KEYGUARD_SERVICE) as KeyguardManager
+            if (keyguardManager.isDeviceLocked) {
+                onKeyguardClicked(keyguardManager, findViewById(R.id.button_auth))
+            } else {
+                onStopOverlay()
             }
         }
+
+        findViewById<View>(R.id.button_close)?.setOnClickListener {
+            if (prefs.getBoolean(Preferences.prefReacts, true))
+                vibrator.vibrate(effectClick)
+            hideTopQuickPanel()
+        }
+
+        updateQuickTilesState()
 
         findViewById<View>(R.id.panel_drag_handle)?.setOnClickListener {
             hideTopQuickPanel()
@@ -699,24 +626,85 @@ class SamSprungOverlay : AppCompatActivity() {
 
     private val wifiEnabler = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()) {
-        if (wifiManager.isWifiEnabled)
-            toolbar.menu.findItem(R.id.toggle_wifi).setIcon(R.drawable.ic_wifi_on_24dp)
-        else
-            toolbar.menu.findItem(R.id.toggle_wifi).setIcon(R.drawable.ic_wifi_off_24dp)
-        toolbar.menu.findItem(R.id.toggle_wifi).icon?.setTint(
-            prefs.getInt(Preferences.prefColors, Color.rgb(255, 255, 255))
-        )
+        updateQuickTilesState()
     }
 
     private val nfcEnabler = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()) {
-        if (nfcAdapter.isEnabled)
-            toolbar.menu.findItem(R.id.toggle_nfc).setIcon(R.drawable.ic_nfc_on_24dp)
-        else
-            toolbar.menu.findItem(R.id.toggle_nfc).setIcon(R.drawable.ic_nfc_off_24dp)
-        toolbar.menu.findItem(R.id.toggle_nfc).icon?.setTint(
-            prefs.getInt(Preferences.prefColors, Color.rgb(255, 255, 255))
-        )
+        updateQuickTilesState()
+    }
+
+    private fun updateQuickTilesState() {
+        val activeBg = R.drawable.quick_tile_bg_active
+        val inactiveBg = R.drawable.quick_tile_bg
+
+        // Wi-Fi
+        val tileWifi = findViewById<View>(R.id.tile_wifi)
+        val iconWifi = findViewById<AppCompatImageView>(R.id.icon_wifi)
+        val isWifiOn = wifiManager.isWifiEnabled
+        tileWifi?.setBackgroundResource(if (isWifiOn) activeBg else inactiveBg)
+        iconWifi?.setImageResource(if (isWifiOn) R.drawable.ic_wifi_on_24dp else R.drawable.ic_wifi_off_24dp)
+
+        // Bluetooth
+        val tileBt = findViewById<View>(R.id.tile_bluetooth)
+        val iconBt = findViewById<AppCompatImageView>(R.id.icon_bluetooth)
+        val isBtOn = try { bluetoothAdapter.isEnabled } catch (_: Exception) { false }
+        tileBt?.setBackgroundResource(if (isBtOn) activeBg else inactiveBg)
+        iconBt?.setImageResource(if (isBtOn) R.drawable.ic_bluetooth_on_24dp else R.drawable.ic_bluetooth_off_24dp)
+
+        // Sound
+        val tileSound = findViewById<View>(R.id.tile_sound)
+        val iconSound = findViewById<AppCompatImageView>(R.id.icon_sound)
+        val textSound = findViewById<TextView>(R.id.text_sound)
+        val isSoundNormal = (audioManager.ringerMode == AudioManager.RINGER_MODE_NORMAL)
+        tileSound?.setBackgroundResource(if (isSoundNormal) activeBg else inactiveBg)
+        iconSound?.setImageResource(if (isSoundNormal) R.drawable.ic_sound_on_24dp else R.drawable.ic_sound_off_24dp)
+        textSound?.text = if (isSoundNormal) "Suara" else "Hening"
+
+        // Rotation
+        val tileRotation = findViewById<View>(R.id.button_rotation)
+        val iconRotation = findViewById<AppCompatImageView>(R.id.icon_rotation)
+        val textRotation = findViewById<TextView>(R.id.text_rotation)
+        val isRotationLocked = prefs.getBoolean(Preferences.prefRotate, false)
+        tileRotation?.setBackgroundResource(if (isRotationLocked) activeBg else inactiveBg)
+        iconRotation?.setImageResource(if (isRotationLocked) R.drawable.ic_screen_lock_rotation_24 else R.drawable.ic_screen_rotation_24)
+        textRotation?.text = if (isRotationLocked) "Terkunci" else "Rotasi"
+
+        // Torch
+        val tileTorch = findViewById<View>(R.id.tile_torch)
+        val iconTorch = findViewById<AppCompatImageView>(R.id.icon_torch)
+        tileTorch?.setBackgroundResource(if (isTorchEnabled) activeBg else inactiveBg)
+        iconTorch?.setImageResource(if (isTorchEnabled) R.drawable.ic_flashlight_on_24dp else R.drawable.ic_flashlight_off_24dp)
+
+        // DND
+        val tileDnd = findViewById<View>(R.id.tile_dnd)
+        val iconDnd = findViewById<AppCompatImageView>(R.id.icon_dnd)
+        val isDndOn = (notificationManager.currentInterruptionFilter != NotificationManager.INTERRUPTION_FILTER_ALL)
+        tileDnd?.setBackgroundResource(if (isDndOn) activeBg else inactiveBg)
+        iconDnd?.setImageResource(if (isDndOn) R.drawable.ic_do_not_disturb_on_24dp else R.drawable.ic_do_not_disturb_off_24dp)
+
+        // NFC
+        val tileNfc = findViewById<View>(R.id.tile_nfc)
+        val iconNfc = findViewById<AppCompatImageView>(R.id.icon_nfc)
+        val isNfcOn = try { nfcAdapter?.isEnabled == true } catch (_: Exception) { false }
+        tileNfc?.setBackgroundResource(if (isNfcOn) activeBg else inactiveBg)
+        iconNfc?.setImageResource(if (isNfcOn) R.drawable.ic_nfc_on_24dp else R.drawable.ic_nfc_off_24dp)
+
+        // Auth / Lock Tile
+        val buttonAuth = findViewById<View>(R.id.button_auth)
+        val iconAuth = findViewById<AppCompatImageView>(R.id.icon_auth)
+        val textAuth = findViewById<TextView>(R.id.text_auth)
+        val keyguardManager = getSystemService(KEYGUARD_SERVICE) as KeyguardManager
+        buttonAuth?.visibility = View.VISIBLE
+        if (keyguardManager.isDeviceLocked) {
+            buttonAuth?.setBackgroundResource(activeBg)
+            iconAuth?.setImageResource(R.drawable.ic_fingerprint_24dp)
+            textAuth?.text = "Buka"
+        } else {
+            buttonAuth?.setBackgroundResource(inactiveBg)
+            iconAuth?.setImageResource(R.drawable.ic_fingerprint_24dp)
+            textAuth?.text = "Kunci"
+        }
     }
 
     private fun setBottomTheme(bottomHandle: View, menuButton: FloatingActionButton) {
@@ -729,14 +717,15 @@ class SamSprungOverlay : AppCompatActivity() {
         menuButton.alpha = prefs.getFloat(Preferences.prefAlphas, 1f)
     }
 
-    private fun setKeyguardStatus(keyguardManager: KeyguardManager, button: AppCompatImageView) {
-        button.isInvisible = !keyguardManager.isDeviceLocked
+    private fun setKeyguardStatus(keyguardManager: KeyguardManager, button: View?) {
+        button?.isInvisible = !keyguardManager.isDeviceLocked
     }
 
-    private fun onKeyguardClicked(keyguardManager: KeyguardManager, button: AppCompatImageView) {
+    private fun onKeyguardClicked(keyguardManager: KeyguardManager, button: View?) {
         setKeyguardListener(object: KeyguardListener {
             override fun onKeyguardCheck(unlocked: Boolean) {
                 setKeyguardStatus(keyguardManager, button)
+                updateQuickTilesState()
             }
         })
     }
@@ -775,13 +764,8 @@ class SamSprungOverlay : AppCompatActivity() {
         if (prefs.getBoolean(Preferences.prefReacts, true)) {
             vibrator.vibrate(effectClick)
         }
-        configureMenuVisibility(toolbar)
-        configureMenuIcons(toolbar)
-        val buttonAuth = findViewById<AppCompatImageView>(R.id.button_auth)
-        if (buttonAuth != null) {
-            val keyguardManager = getSystemService(KEYGUARD_SERVICE) as KeyguardManager
-            setKeyguardStatus(keyguardManager, buttonAuth)
-        }
+        viewPager.setCurrentItem(1, false)
+        updateQuickTilesState()
 
         panel.visibility = View.VISIBLE
         panel.post {
@@ -1290,22 +1274,30 @@ class SamSprungOverlay : AppCompatActivity() {
                 MotionEvent.ACTION_DOWN -> {
                     swipeStartX = ev.rawX
                     swipeStartY = ev.rawY
-                    if (panel == null || panel.visibility != View.VISIBLE) {
-                        val isHomeClock = (viewPager.currentItem == 1)
-                        val triggerZone = if (isHomeClock) 160.toPx else 70.toPx
-                        isPullDownGesture = (swipeStartY < triggerZone)
-                    } else {
-                        isPullDownGesture = false
-                    }
+                    val isHomeClock = (viewPager.currentItem == 1)
+                    val isPanelHidden = (panel == null || panel.visibility != View.VISIBLE)
+                    isPullDownGesture = isHomeClock && isPanelHidden && (swipeStartY < 160.toPx)
                 }
                 MotionEvent.ACTION_MOVE -> {
                     if (isPullDownGesture) {
                         val dy = ev.rawY - swipeStartY
                         val dx = kotlin.math.abs(ev.rawX - swipeStartX)
-                        if (dy > 35.toPx && dy > dx * 1.3f) {
-                            isPullDownGesture = false
-                            showTopQuickPanel()
+                        if (dy > 8.toPx && dy >= dx) {
+                            if (dy > 25.toPx) {
+                                isPullDownGesture = false
+                                // Batalkan drag horizontal pada ViewPager2 agar tidak tergeser ke notifikasi
+                                val cancel = MotionEvent.obtain(ev).apply { action = MotionEvent.ACTION_CANCEL }
+                                super.dispatchTouchEvent(cancel)
+                                cancel.recycle()
+                                viewPager.setCurrentItem(1, false)
+                                showTopQuickPanel()
+                                return true
+                            }
+                            // Tahan event agar ViewPager2 tidak mendeteksi pergeseran horizontal sedikit pun
                             return true
+                        } else if (dx > dy * 1.5f && dx > 15.toPx) {
+                            // User berniat swipe horizontal ke halaman lain
+                            isPullDownGesture = false
                         }
                     }
                 }

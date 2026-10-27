@@ -101,7 +101,7 @@ class NotificationFragment : Fragment(), NotificationAdapter.OnNoticeClickListen
         }
 
         val noticesView = view.findViewById<RecyclerView>(R.id.notificationList)
-        layoutManager = LinearLayoutManager(requireContext())
+        layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.VERTICAL, false)
         noticesView.layoutManager = layoutManager
 
         val adapter = NotificationAdapter(requireActivity(), this)
@@ -123,16 +123,41 @@ class NotificationFragment : Fragment(), NotificationAdapter.OnNoticeClickListen
             NotificationReceiver.getReceiver()?.setNotificationsListener(adapter)
         }
 
-        RecyclerViewTouch(noticesView).setSwipeCallback(
-            ItemTouchHelper.END,
-            object: RecyclerViewTouch.SwipeCallback {
+        val swipeCallback = object : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.RIGHT) {
+            override fun onMove(
+                recyclerView: RecyclerView,
+                viewHolder: RecyclerView.ViewHolder,
+                target: RecyclerView.ViewHolder
+            ): Boolean = false
+
             override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
-                if (direction == ItemTouchHelper.END) {
-                    val holder = viewHolder as NotificationAdapter.NoticeViewHolder
-                    holder.dismissNotification()
+                if (direction == ItemTouchHelper.RIGHT) {
+                    val holder = viewHolder as? NotificationAdapter.NoticeViewHolder
+                    holder?.dismissNotification()
                 }
             }
-        })
+
+            override fun onChildDraw(
+                c: android.graphics.Canvas,
+                recyclerView: RecyclerView,
+                viewHolder: RecyclerView.ViewHolder,
+                dX: Float,
+                dY: Float,
+                actionState: Int,
+                isCurrentlyActive: Boolean
+            ) {
+                if (isCurrentlyActive && dX > 0) {
+                    recyclerView.parent?.requestDisallowInterceptTouchEvent(true)
+                }
+                super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive)
+            }
+
+            override fun clearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
+                super.clearView(recyclerView, viewHolder)
+                recyclerView.parent?.requestDisallowInterceptTouchEvent(false)
+            }
+        }
+        ItemTouchHelper(swipeCallback).attachToRecyclerView(noticesView)
     }
 
     private fun checkEmptyState(adapter: NotificationAdapter) {

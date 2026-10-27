@@ -151,8 +151,8 @@ class NotificationAdapter(
             val imageView = itemView.findViewById<AppCompatImageView>(R.id.image)
             val titleText = itemView.findViewById<TextView>(R.id.title)
             val linesText = itemView.findViewById<TextView>(R.id.lines)
-            val launch = itemView.findViewById<AppCompatImageView>(R.id.launch)
-            val dismiss = itemView.findViewById<AppCompatImageView>(R.id.dismiss)
+            val launch = itemView.findViewById<View>(R.id.launch)
+            val dismiss = itemView.findViewById<View>(R.id.dismiss)
 
             linesText.maxLines = 3
             linesText.ellipsize = TextUtils.TruncateAt.END
