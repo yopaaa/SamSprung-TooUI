@@ -100,6 +100,7 @@
                     android:background="@color/bottomSheetTint"
                     android:lineSpacingExtra="0dp"
                     android:lineSpacingMultiplier="0"
+                    android:visibility="gone"
                     android:layout_gravity="bottom"/>
             </FrameLayout>
 

@@ -18,6 +18,7 @@ import android.annotation.SuppressLint
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
+import android.graphics.drawable.Drawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -31,6 +32,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.concurrent.ConcurrentHashMap
 
 class DrawerAppAdapter(
     private var packages: MutableList<ResolveInfo>,
@@ -38,6 +40,17 @@ class DrawerAppAdapter(
     private val packageManager: PackageManager,
     private val prefs: SharedPreferences
 ) : RecyclerView.Adapter<DrawerAppAdapter.AppViewHolder>() {
+
+    companion object {
+        val iconCache = ConcurrentHashMap<String, Drawable>()
+        val labelCache = ConcurrentHashMap<String, String>()
+
+        fun clearCache() {
+            iconCache.clear()
+            labelCache.clear()
+        }
+    }
+
     private var filter: PackageFilter? = null
     private var filteredData: MutableList<ResolveInfo>
 
@@ -51,7 +64,9 @@ class DrawerAppAdapter(
     }
 
     override fun getItemId(i: Int): Long {
-        return filteredData[i].labelRes.toLong()
+        if (i < 0 || i >= filteredData.size) return RecyclerView.NO_ID
+        val info = filteredData[i]
+        return "${info.activityInfo.packageName}/${info.activityInfo.name}".hashCode().toLong()
     }
 
     private fun getItem(i: Int): ResolveInfo {
@@ -59,6 +74,7 @@ class DrawerAppAdapter(
     }
 
     init {
+        setHasStableIds(true)
         filteredData = packages
     }
 
@@ -139,25 +155,56 @@ class DrawerAppAdapter(
         private var textView: TextView? = null
         fun bind(resolveInfo: ResolveInfo) {
             this.resolveInfo = resolveInfo
-            CoroutineScope(Dispatchers.IO).launch {
-                val icon = resolveInfo.loadIcon(packageManager)
-                withContext(Dispatchers.Main) {
-                    icon?.let { iconView.setImageDrawable(it) }
-                }
-                if (!prefs.getBoolean(Preferences.prefLayout, true)) {
-                    textView = itemView.findViewById(R.id.widgetItemText)
-                    val label: CharSequence? = try {
-                        resolveInfo.loadLabel(packageManager)
+            val key = "${resolveInfo.activityInfo.packageName}/${resolveInfo.activityInfo.name}"
+
+            val cachedIcon = iconCache[key]
+            if (cachedIcon != null) {
+                iconView.setImageDrawable(cachedIcon)
+            } else {
+                iconView.setImageDrawable(null)
+                CoroutineScope(Dispatchers.IO).launch {
+                    val icon = try {
+                        resolveInfo.loadIcon(packageManager)
                     } catch (_: Exception) {
-                        try {
-                            resolveInfo.nonLocalizedLabel
-                        } catch (_: Exception) {
-                            null
+                        null
+                    }
+                    if (icon != null) {
+                        iconCache[key] = icon
+                        withContext(Dispatchers.Main) {
+                            if (this@AppViewHolder.resolveInfo == resolveInfo) {
+                                iconView.setImageDrawable(icon)
+                            }
                         }
                     }
-                    val appName = if (label.isNullOrEmpty()) "?" else label
-                    withContext(Dispatchers.Main) {
-                        textView?.text = appName
+                }
+            }
+
+            if (!prefs.getBoolean(Preferences.prefLayout, true)) {
+                if (textView == null) {
+                    textView = itemView.findViewById(R.id.widgetItemText)
+                }
+                val cachedLabel = labelCache[key]
+                if (cachedLabel != null) {
+                    textView?.text = cachedLabel
+                } else {
+                    textView?.text = ""
+                    CoroutineScope(Dispatchers.IO).launch {
+                        val label: CharSequence? = try {
+                            resolveInfo.loadLabel(packageManager)
+                        } catch (_: Exception) {
+                            try {
+                                resolveInfo.nonLocalizedLabel
+                            } catch (_: Exception) {
+                                null
+                            }
+                        }
+                        val appName = if (label.isNullOrEmpty()) "?" else label.toString()
+                        labelCache[key] = appName
+                        withContext(Dispatchers.Main) {
+                            if (this@AppViewHolder.resolveInfo == resolveInfo) {
+                                textView?.text = appName
+                            }
+                        }
                     }
                 }
             }

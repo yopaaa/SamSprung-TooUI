@@ -517,6 +517,7 @@ class SamSprungOverlay : AppCompatActivity() {
 
         viewPager = findViewById(R.id.pager)
         viewPager.adapter = pagerAdapter
+        viewPager.offscreenPageLimit = 2
         viewPager.setPageTransformer(when (prefs.getInt(Preferences.prefPaging, -1)) {
             1 -> ClockSpinTransformer()
             2 -> DepthTransformer()
@@ -530,7 +531,6 @@ class SamSprungOverlay : AppCompatActivity() {
         viewPager.registerOnPageChangeCallback(object: ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
                 super.onPageSelected(position)
-                getSearchView()?.isGone = position != 2
                 // Di Halaman 0 (Notifikasi), matikan edge back kiri agar geser hapus notif tidak terhalang!
                 edgeGestureManager?.setLeftEdgeEnabled(position != 0)
                 setScreenTimeout(findViewById(R.id.bottom_sheet_main))
@@ -810,8 +810,8 @@ class SamSprungOverlay : AppCompatActivity() {
 
     fun getSearchView() : SearchView? {
         val searchView = findViewById<SearchView>(R.id.package_search)
-        searchView.isVisible = prefs.getBoolean(Preferences.prefSearch, true)
-        return if (searchView.isVisible) searchView else null
+        searchView?.isGone = true
+        return null
     }
 
     private fun checkUpdatesWithDelay() {

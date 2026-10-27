@@ -54,6 +54,10 @@ import kotlinx.coroutines.withContext
 
 class AppDrawerFragment : Fragment(), DrawerAppAdapter.OnAppClickListener {
 
+    companion object {
+        private var cachedPackages: MutableList<ResolveInfo>? = null
+    }
+
     private val Number.toPx get() = TypedValue.applyDimension(
         TypedValue.COMPLEX_UNIT_DIP, this.toFloat(),
         ScaledContext(requireActivity()).cover().resources.displayMetrics
@@ -68,6 +72,8 @@ class AppDrawerFragment : Fragment(), DrawerAppAdapter.OnAppClickListener {
 
     private lateinit var launcherView: RecyclerView
     private var packReceiver: BroadcastReceiver? = null
+    private var currentLayoutIsGrid: Boolean? = null
+    private var currentColumnCount: Int? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -82,45 +88,35 @@ class AppDrawerFragment : Fragment(), DrawerAppAdapter.OnAppClickListener {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        val isGrid = prefs.getBoolean(Preferences.prefLayout, true)
+        val cols = getColumnCount()
+        currentLayoutIsGrid = isGrid
+        currentColumnCount = cols
+
         launcherView = view.findViewById<RecyclerView>(R.id.appsList).apply {
-            adapter = DrawerAppAdapter(
-                PackageRetriever(requireActivity()).getFilteredPackageList(),
-                this@AppDrawerFragment, requireActivity().packageManager, prefs
-            )
+            setHasFixedSize(true)
+            itemAnimator = null // Mencegah kedipan / blink animasi default RecyclerView
+            layoutManager = if (isGrid) {
+                GridLayoutManager(activity, cols)
+            } else {
+                LinearLayoutManager(activity).also {
+                    addItemDecoration(DividerItemDecoration(activity, DividerItemDecoration.VERTICAL))
+                }
+            }
+            updatePadding(bottom = 6) // Padding bersih tanpa search bar
         }
 
-        val activity = requireActivity() as SamSprungOverlay
-        activity.getSearchView()?.apply {
-            launcherView.updatePadding(bottom = 64)
-            isSubmitButtonEnabled = false
-            setIconifiedByDefault(true)
-            findViewById<LinearLayout>(R.id.search_bar)?.run {
-                this.layoutParams = this.layoutParams.apply {
-                    height = TypedValue.applyDimension(
-                        TypedValue.COMPLEX_UNIT_DIP,
-                        20f, resources.displayMetrics).toInt()
-                }
-            }
-            with (requireActivity().getSystemService(Context.SEARCH_SERVICE) as SearchManager) {
-                setSearchableInfo(getSearchableInfo(requireActivity().componentName))
-            }
-            setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-                override fun onQueryTextSubmit(query: String): Boolean {
-                    val adapter = launcherView.adapter as DrawerAppAdapter
-                    adapter.setQuery(query)
-                    return false
-                }
-
-                override fun onQueryTextChange(query: String): Boolean {
-                    if (query.isEmpty()) isIconified = true
-                    val adapter = launcherView.adapter as DrawerAppAdapter
-                    adapter.setQuery(query)
-                    return true
-                }
-            })
-        } ?: requireActivity().findViewById<SearchView>(R.id.package_search).let {
-            launcherView.updatePadding(bottom = 30)
-            it.isGone = true
+        val existing = cachedPackages
+        if (existing != null && existing.isNotEmpty()) {
+            launcherView.adapter = DrawerAppAdapter(
+                existing, this@AppDrawerFragment, requireActivity().packageManager, prefs
+            )
+        } else {
+            val adapter = DrawerAppAdapter(
+                mutableListOf(), this@AppDrawerFragment, requireActivity().packageManager, prefs
+            )
+            launcherView.adapter = adapter
+            getFilteredPackageList()
         }
 
         RecyclerViewTouch(launcherView).setSwipeCallback(ItemTouchHelper.DOWN,
@@ -142,9 +138,11 @@ class AppDrawerFragment : Fragment(), DrawerAppAdapter.OnAppClickListener {
         packReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent) {
                 if (intent.action == Intent.ACTION_PACKAGE_FULLY_REMOVED) {
+                    DrawerAppAdapter.clearCache()
                     getFilteredPackageList()
                 } else if (intent.action == Intent.ACTION_PACKAGE_ADDED) {
                     if (!intent.getBooleanExtra(Intent.EXTRA_REPLACING, false)) {
+                        DrawerAppAdapter.clearCache()
                         getFilteredPackageList()
                     }
                 }
@@ -166,10 +164,14 @@ class AppDrawerFragment : Fragment(), DrawerAppAdapter.OnAppClickListener {
     private fun getFilteredPackageList() {
         CoroutineScope(Dispatchers.IO).launch(Dispatchers.IO) {
             val packages = PackageRetriever(requireActivity()).getFilteredPackageList()
+            cachedPackages = packages
             withContext(Dispatchers.Main) {
-                val adapter = launcherView.adapter as DrawerAppAdapter
-                adapter.setPackages(packages)
-                adapter.notifyDataSetChanged()
+                if (!isAdded) return@withContext
+                val adapter = launcherView.adapter as? DrawerAppAdapter
+                if (adapter != null) {
+                    adapter.setPackages(packages)
+                    adapter.notifyDataSetChanged()
+                }
             }
         }
     }
@@ -205,17 +207,22 @@ class AppDrawerFragment : Fragment(), DrawerAppAdapter.OnAppClickListener {
 
     override fun onAppClicked(resolveInfo: ResolveInfo, position: Int) {
         launcherManager.launchResolveInfo(resolveInfo)
-        if (this::launcherView.isInitialized) getFilteredPackageList()
     }
 
     override fun onResume() {
         super.onResume()
-        if (prefs.getBoolean(Preferences.prefLayout, true)) {
-            launcherView.layoutManager = GridLayoutManager(activity, getColumnCount())
-        } else {
-            launcherView.layoutManager = LinearLayoutManager(activity)
-            launcherView.addItemDecoration(DividerItemDecoration(activity,
-                DividerItemDecoration.VERTICAL))
+        val isGrid = prefs.getBoolean(Preferences.prefLayout, true)
+        val cols = getColumnCount()
+        if (currentLayoutIsGrid != isGrid || currentColumnCount != cols) {
+            currentLayoutIsGrid = isGrid
+            currentColumnCount = cols
+            if (isGrid) {
+                launcherView.layoutManager = GridLayoutManager(activity, cols)
+            } else {
+                launcherView.layoutManager = LinearLayoutManager(activity)
+                launcherView.addItemDecoration(DividerItemDecoration(activity,
+                    DividerItemDecoration.VERTICAL))
+            }
         }
     }
 
