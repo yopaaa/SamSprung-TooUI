@@ -22,11 +22,12 @@ class CoverStateAdapter(fragmentActivity: AppCompatActivity) : FragmentStateAdap
     private val mFragments: ArrayList<PanelViewFragment> = arrayListOf()
     private val mFragmentIDs: ArrayList<Int> = arrayListOf()
     private val noticeList = NotificationFragment()
+    private val clockHome = ClockHomeFragment()
     private val appDrawer = AppDrawerFragment()
 
     fun addFragment() : Int {
         val fragment = PanelViewFragment()
-        val position = mFragmentIDs.size + 2
+        val position = mFragmentIDs.size + 3
         mFragments.add(fragment)
         notifyItemInserted(position)
         mFragmentIDs.add(position)
@@ -34,7 +35,7 @@ class CoverStateAdapter(fragmentActivity: AppCompatActivity) : FragmentStateAdap
     }
 
     fun removeFragment(fragmentID: Int) {
-        val position = fragmentID - 2
+        val position = fragmentID - 3
         mFragments.removeAt(position)
         mFragmentIDs.removeAt(position)
         mFragments.trimToSize()
@@ -43,23 +44,24 @@ class CoverStateAdapter(fragmentActivity: AppCompatActivity) : FragmentStateAdap
     }
 
     fun getFragment(fragmentID: Int) : PanelViewFragment {
-        return mFragments[fragmentID - 2]
+        return mFragments[fragmentID - 3]
     }
 
     override fun createFragment(position: Int): Fragment {
         return when (position) {
             0 -> noticeList
-            1 -> appDrawer
-            else -> mFragments[position - 2]
+            1 -> clockHome
+            2 -> appDrawer
+            else -> mFragments[position - 3]
         }
     }
 
     override fun getItemId(position: Int): Long {
-        return if (position < 2) position.toLong() else mFragmentIDs[position - 2].toLong()
+        return if (position < 3) position.toLong() else mFragmentIDs[position - 3].toLong()
     }
 
     override fun getItemCount(): Int {
-        return mFragmentIDs.size + 2
+        return mFragmentIDs.size + 3
     }
 
     override fun containsItem(itemId: Long): Boolean {

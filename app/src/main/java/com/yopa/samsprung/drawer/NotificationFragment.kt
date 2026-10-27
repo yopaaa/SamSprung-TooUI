@@ -73,6 +73,7 @@ class NotificationFragment : Fragment(), NotificationAdapter.OnNoticeClickListen
     private var launcherManager: LauncherManager? = null
     private var textSpeech: TextToSpeech? = null
     private var layoutManager: LinearLayoutManager? = null
+    private var emptyView: View? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -84,6 +85,7 @@ class NotificationFragment : Fragment(), NotificationAdapter.OnNoticeClickListen
     @SuppressLint("ClickableViewAccessibility")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        emptyView = view.findViewById(R.id.empty_notifications_view)
 
         launcherManager = LauncherManager(requireActivity() as SamSprungOverlay)
 
@@ -99,45 +101,42 @@ class NotificationFragment : Fragment(), NotificationAdapter.OnNoticeClickListen
         }
 
         val noticesView = view.findViewById<RecyclerView>(R.id.notificationList)
-        // noticesView.setHasFixedSize(true)
-
         layoutManager = LinearLayoutManager(requireContext())
         noticesView.layoutManager = layoutManager
-        noticesView.adapter = NotificationAdapter(requireActivity(), this)
+
+        val adapter = NotificationAdapter(requireActivity(), this)
+        adapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
+            override fun onChanged() {
+                checkEmptyState(adapter)
+            }
+            override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
+                checkEmptyState(adapter)
+            }
+            override fun onItemRangeRemoved(positionStart: Int, itemCount: Int) {
+                checkEmptyState(adapter)
+            }
+        })
+        noticesView.adapter = adapter
+        checkEmptyState(adapter)
+
         if (hasNotificationListener(requireContext())) {
-            NotificationReceiver.getReceiver()?.setNotificationsListener(
-                noticesView.adapter as NotificationAdapter
-            )
+            NotificationReceiver.getReceiver()?.setNotificationsListener(adapter)
         }
 
         RecyclerViewTouch(noticesView).setSwipeCallback(
-            ItemTouchHelper.END or ItemTouchHelper.DOWN,
+            ItemTouchHelper.END,
             object: RecyclerViewTouch.SwipeCallback {
             override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
                 if (direction == ItemTouchHelper.END) {
                     val holder = viewHolder as NotificationAdapter.NoticeViewHolder
                     holder.dismissNotification()
                 }
-                if (direction == ItemTouchHelper.DOWN) {
-                    onSwipeClosed(noticesView)
-                }
-            }
-        })
-
-        noticesView.setOnTouchListener(object : OnSwipeTouchListener(requireActivity()) {
-            override fun onSwipeBottom() : Boolean {
-                onSwipeClosed(noticesView)
-                return false
             }
         })
     }
 
-    private fun onSwipeClosed(recyclerView: RecyclerView) {
-        val manager = recyclerView.layoutManager as LinearLayoutManager
-        if (manager.itemCount == 0 || manager.findFirstCompletelyVisibleItemPosition() == 0) {
-            val activity = requireActivity() as SamSprungOverlay
-            activity.closeMainDrawer()
-        }
+    private fun checkEmptyState(adapter: NotificationAdapter) {
+        emptyView?.visibility = if (adapter.itemCount == 0) View.VISIBLE else View.GONE
     }
 
     private fun promptNotificationReply(action: Notification.Action) {

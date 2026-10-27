@@ -5,11 +5,13 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="2dp"
+    android:layout_marginHorizontal="2dp"
+    android:layout_marginVertical="3dp"
     android:clickable="true"
     android:focusable="true"
     android:foreground="@drawable/card_foreground"
-    app:cardCornerRadius="@dimen/card_corner_radius">
+    app:cardCornerRadius="10dp"
+    app:cardElevation="2dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -21,72 +23,72 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:padding="4dp"
+            android:padding="6dp"
             android:gravity="center_vertical"
             tools:ignore="UseCompoundDrawables">
 
             <androidx.appcompat.widget.AppCompatImageView
                 android:id="@+id/icon"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
                 android:gravity="center_vertical"
                 android:contentDescription="@string/description_icon" />
 
             <LinearLayout
-                android:layout_width="match_parent"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:gravity="center_vertical"
                 android:layout_marginStart="8dp"
-                android:layout_marginEnd="8dp"
+                android:layout_marginEnd="6dp"
                 android:orientation="vertical">
 
                 <TextView
                     android:id="@+id/title"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:textSize="16sp"/>
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:textColor="@android:color/white"
+                    android:singleLine="true"
+                    android:ellipsize="end" />
 
                 <TextView
                     android:id="@+id/lines"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:textSize="16sp"/>
+                    android:layout_marginTop="1dp"
+                    android:textSize="12sp"
+                    android:textColor="#E6FFFFFF"
+                    android:lineSpacingExtra="1dp" />
             </LinearLayout>
 
-            <androidx.constraintlayout.widget.ConstraintLayout
+            <LinearLayout
                 android:id="@+id/quick_panel"
                 android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:layout_weight="0"
+                android:layout_height="wrap_content"
+                android:gravity="center"
                 android:orientation="vertical">
 
                 <androidx.appcompat.widget.AppCompatImageView
                     android:id="@+id/launch"
                     app:srcCompat="@drawable/ic_launch_24dp"
-                    android:layout_width="18dp"
-                    android:layout_height="0dp"
-                    app:layout_constraintHeight_default="percent"
-                    app:layout_constraintHeight_percent="0.5"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintLeft_toLeftOf="parent"
-                    app:layout_constraintRight_toRightOf="parent"
-                    android:gravity="top"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:padding="2dp"
+                    app:tint="@android:color/white"
                     android:contentDescription="@string/description_icon" />
 
                 <androidx.appcompat.widget.AppCompatImageView
                     android:id="@+id/dismiss"
                     app:srcCompat="@drawable/ic_cancel_presentation_24dp"
-                    android:layout_width="18dp"
-                    android:layout_height="0dp"
-                    app:layout_constraintHeight_default="percent"
-                    app:layout_constraintHeight_percent="0.5"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintLeft_toLeftOf="parent"
-                    app:layout_constraintRight_toRightOf="parent"
-                    android:gravity="bottom"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:layout_marginTop="2dp"
+                    android:padding="2dp"
+                    app:tint="#B3FFFFFF"
                     android:contentDescription="@string/description_icon" />
-            </androidx.constraintlayout.widget.ConstraintLayout>
+            </LinearLayout>
         </LinearLayout>
 
         <LinearLayout

@@ -9,5 +9,5 @@
 
     <color name="bottomSheetTint">#A9333333</color>
     <color name="backgroundTint">#66000000</color>
-    <color name="backgroundFlat">#BB000000</color>
+    <color name="backgroundFlat">#FF000000</color>
 </resources>

@@ -214,8 +214,11 @@ class SamSprungOverlay : AppCompatActivity() {
 
         edgeGestureManager?.detach()
         edgeGestureManager = EdgeBackGestureManager(this, windowManager) {
-            if (bottomSheetBehaviorMain.state == BottomSheetBehavior.STATE_EXPANDED) {
-                closeMainDrawer()
+            val panel = findViewById<View>(R.id.top_quick_panel)
+            if (panel != null && panel.visibility == View.VISIBLE) {
+                hideTopQuickPanel()
+            } else if (viewPager.currentItem != 1) {
+                viewPager.setCurrentItem(1, true)
             } else {
                 AccessibilityObserver.performBackAction()
             }
@@ -274,7 +277,11 @@ class SamSprungOverlay : AppCompatActivity() {
                     }
                 } catch (_: SecurityException) { }
             }
-            if (null != background) coordinator.background = background
+            if (null != background) {
+                coordinator.background = background
+            } else {
+                coordinator.setBackgroundColor(Color.BLACK)
+            }
         }
 
         val blurView = findViewById<BlurView>(R.id.blurContainer)
@@ -344,8 +351,6 @@ class SamSprungOverlay : AppCompatActivity() {
         batteryLevel.setTextColor(color)
         clock.setTextColor(color)
 
-        val bottomSheet = findViewById<View>(R.id.bottom_sheet)
-
         val buttonRotation = findViewById<AppCompatImageView>(R.id.button_rotation)
         buttonRotation.setOnClickListener {
             if (prefs.getBoolean(Preferences.prefReacts, true))
@@ -353,7 +358,7 @@ class SamSprungOverlay : AppCompatActivity() {
             val unlocked = !prefs.getBoolean(Preferences.prefRotate, false)
             if (unlocked) {
                 val lockBar: Snackbar = IconifiedSnackbar(
-                    this@SamSprungOverlay, bottomSheet as ViewGroup
+                    this@SamSprungOverlay, coordinator
                 ).buildTickerBar(
                     getString(R.string.rotation_lock),
                     R.drawable.ic_screen_lock_rotation_24
@@ -400,151 +405,116 @@ class SamSprungOverlay : AppCompatActivity() {
         }
         setKeyguardStatus(keyguardManager, buttonAuth)
 
-        val toggleStats = findViewById<LinearLayout>(R.id.toggle_status)
-        val info = findViewById<LinearLayout>(R.id.bottom_info)
-        val bottomSheetBehavior: BottomSheetBehavior<View> = BottomSheetBehavior.from(bottomSheet).apply {
-            state = BottomSheetBehavior.STATE_COLLAPSED
-            addBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
-                var hasConfigured = false
-
-                @SuppressLint("MissingPermission")
-                override fun onStateChanged(bottomSheet: View, newState: Int) {
-                    if (newState == BottomSheetBehavior.STATE_EXPANDED) {
-                        toolbar.setOnMenuItemClickListener { item: MenuItem ->
-                            when (item.itemId) {
-                                R.id.toggle_wifi -> {
-                                    if (buttonAuth.isInvisible) {
-                                        wifiEnabler.launch(
-                                            Intent(Settings.Panel.ACTION_INTERNET_CONNECTIVITY)/*,
-                                            CoverOptions(null).getActivityOptionsCompat(1)*/
-                                        )
-                                    } else {
-                                        val authBar: Snackbar = IconifiedSnackbar(
-                                            this@SamSprungOverlay, bottomSheet as ViewGroup
-                                        ).buildTickerBar(
-                                            getString(R.string.auth_required),
-                                            R.drawable.ic_fingerprint_24dp
-                                        )
-                                        authBar.setAction(R.string.auth_required_action) {
-                                            onKeyguardClicked(keyguardManager, buttonAuth)
-                                        }
-                                        authBar.show()
-                                    }
-                                    return@setOnMenuItemClickListener true
-                                }
-
-                                R.id.toggle_bluetooth -> {
-                                    @Suppress("deprecation")
-                                    if (bluetoothAdapter.isEnabled) {
-                                        bluetoothAdapter.disable()
-                                        item.setIcon(R.drawable.ic_bluetooth_off_24dp)
-                                    } else {
-                                        bluetoothAdapter.enable()
-                                        item.setIcon(R.drawable.ic_bluetooth_on_24dp)
-                                    }
-                                    item.icon?.setTint(color)
-                                    return@setOnMenuItemClickListener true
-                                }
-
-                                R.id.toggle_nfc -> {
-                                    if (buttonAuth.isInvisible) {
-                                        nfcEnabler.launch(
-                                            Intent(Settings.Panel.ACTION_NFC)/*,
-                                            CoverOptions(null).getActivityOptionsCompat(1)*/
-                                        )
-                                    } else {
-                                        val authBar: Snackbar = IconifiedSnackbar(
-                                            this@SamSprungOverlay, bottomSheet as ViewGroup
-                                        ).buildTickerBar(
-                                            getString(R.string.auth_required),
-                                            R.drawable.ic_fingerprint_24dp
-                                        )
-                                        authBar.setAction(R.string.auth_required_action) {
-                                            onKeyguardClicked(keyguardManager, buttonAuth)
-                                        }
-                                        authBar.show()
-                                    }
-                                    return@setOnMenuItemClickListener true
-                                }
-
-                                R.id.toggle_sound -> {
-                                    if (audioManager.ringerMode == AudioManager.RINGER_MODE_NORMAL) {
-                                        audioManager.ringerMode = AudioManager.RINGER_MODE_SILENT
-                                        item.setIcon(R.drawable.ic_sound_off_24dp)
-                                    } else {
-                                        audioManager.ringerMode = AudioManager.RINGER_MODE_NORMAL
-                                        item.setIcon(R.drawable.ic_sound_on_24dp)
-                                    }
-                                    item.icon?.setTint(color)
-                                    return@setOnMenuItemClickListener true
-                                }
-
-                                R.id.toggle_dnd -> {
-                                    if (notificationManager.currentInterruptionFilter ==
-                                        NotificationManager.INTERRUPTION_FILTER_ALL
-                                    ) {
-                                        notificationManager.setInterruptionFilter(
-                                            NotificationManager.INTERRUPTION_FILTER_NONE
-                                        )
-                                        item.setIcon(R.drawable.ic_do_not_disturb_on_24dp)
-                                    } else {
-                                        notificationManager.setInterruptionFilter(
-                                            NotificationManager.INTERRUPTION_FILTER_ALL
-                                        )
-                                        item.setIcon(R.drawable.ic_do_not_disturb_off_24dp)
-                                    }
-                                    item.icon?.setTint(color)
-                                    return@setOnMenuItemClickListener true
-                                }
-
-                                R.id.toggle_torch -> {
-                                    camManager.setTorchMode(
-                                        camManager.cameraIdList[0],
-                                        !isTorchEnabled
-                                    )
-                                    return@setOnMenuItemClickListener true
-                                }
-
-                                R.id.toggle_widgets -> {
-                                    widgetManager?.showAddDialog(viewPager)
-                                    state = BottomSheetBehavior.STATE_COLLAPSED
-                                    return@setOnMenuItemClickListener false
-                                }
-
-                                else -> {
-                                    return@setOnMenuItemClickListener false
-                                }
-                            }
+        toolbar.setOnMenuItemClickListener { item: MenuItem ->
+            when (item.itemId) {
+                R.id.toggle_wifi -> {
+                    if (buttonAuth.isInvisible) {
+                        wifiEnabler.launch(
+                            Intent(Settings.Panel.ACTION_INTERNET_CONNECTIVITY)
+                        )
+                    } else {
+                        val authBar: Snackbar = IconifiedSnackbar(
+                            this@SamSprungOverlay, coordinator
+                        ).buildTickerBar(
+                            getString(R.string.auth_required),
+                            R.drawable.ic_fingerprint_24dp
+                        )
+                        authBar.setAction(R.string.auth_required_action) {
+                            onKeyguardClicked(keyguardManager, buttonAuth)
                         }
-                    } else if (newState == BottomSheetBehavior.STATE_COLLAPSED) {
-                        hasConfigured = false
-                        toggleStats.removeAllViews()
-                        configureMenuVisibility(toolbar)
-                        info.visibility = View.VISIBLE
+                        authBar.show()
                     }
+                    return@setOnMenuItemClickListener true
                 }
 
-                override fun onSlide(bottomSheet: View, slideOffset: Float) {
-                    if (slideOffset > 0) {
-                        if (!hasConfigured) {
-                            hasConfigured = true
-                            info.visibility = View.GONE
-                            color = configureMenuIcons(toolbar)
-                            batteryLevel.setTextColor(color)
-                            clock.setTextColor(color)
-                            setKeyguardStatus(keyguardManager, buttonAuth)
-                        }
+                R.id.toggle_bluetooth -> {
+                    @Suppress("deprecation")
+                    if (bluetoothAdapter.isEnabled) {
+                        bluetoothAdapter.disable()
+                        item.setIcon(R.drawable.ic_bluetooth_off_24dp)
+                    } else {
+                        bluetoothAdapter.enable()
+                        item.setIcon(R.drawable.ic_bluetooth_on_24dp)
                     }
+                    item.icon?.setTint(color)
+                    return@setOnMenuItemClickListener true
                 }
-            })
+
+                R.id.toggle_nfc -> {
+                    if (buttonAuth.isInvisible) {
+                        nfcEnabler.launch(
+                            Intent(Settings.Panel.ACTION_NFC)
+                        )
+                    } else {
+                        val authBar: Snackbar = IconifiedSnackbar(
+                            this@SamSprungOverlay, coordinator
+                        ).buildTickerBar(
+                            getString(R.string.auth_required),
+                            R.drawable.ic_fingerprint_24dp
+                        )
+                        authBar.setAction(R.string.auth_required_action) {
+                            onKeyguardClicked(keyguardManager, buttonAuth)
+                        }
+                        authBar.show()
+                    }
+                    return@setOnMenuItemClickListener true
+                }
+
+                R.id.toggle_sound -> {
+                    if (audioManager.ringerMode == AudioManager.RINGER_MODE_NORMAL) {
+                        audioManager.ringerMode = AudioManager.RINGER_MODE_SILENT
+                        item.setIcon(R.drawable.ic_sound_off_24dp)
+                    } else {
+                        audioManager.ringerMode = AudioManager.RINGER_MODE_NORMAL
+                        item.setIcon(R.drawable.ic_sound_on_24dp)
+                    }
+                    item.icon?.setTint(color)
+                    return@setOnMenuItemClickListener true
+                }
+
+                R.id.toggle_dnd -> {
+                    if (notificationManager.currentInterruptionFilter ==
+                        NotificationManager.INTERRUPTION_FILTER_ALL
+                    ) {
+                        notificationManager.setInterruptionFilter(
+                            NotificationManager.INTERRUPTION_FILTER_NONE
+                        )
+                        item.setIcon(R.drawable.ic_do_not_disturb_on_24dp)
+                    } else {
+                        notificationManager.setInterruptionFilter(
+                            NotificationManager.INTERRUPTION_FILTER_ALL
+                        )
+                        item.setIcon(R.drawable.ic_do_not_disturb_off_24dp)
+                    }
+                    item.icon?.setTint(color)
+                    return@setOnMenuItemClickListener true
+                }
+
+                R.id.toggle_torch -> {
+                    camManager.setTorchMode(
+                        camManager.cameraIdList[0],
+                        !isTorchEnabled
+                    )
+                    return@setOnMenuItemClickListener true
+                }
+
+                R.id.toggle_widgets -> {
+                    widgetManager?.showAddDialog(viewPager)
+                    hideTopQuickPanel()
+                    return@setOnMenuItemClickListener false
+                }
+
+                else -> {
+                    return@setOnMenuItemClickListener false
+                }
+            }
         }
 
         findViewById<AppCompatImageView>(R.id.button_close).apply {
             setOnClickListener {
                 if (prefs.getBoolean(Preferences.prefReacts, true))
                     vibrator.vibrate(effectClick)
-                bottomSheetBehavior.state = BottomSheetBehavior.STATE_COLLAPSED
-                closeMainDrawer()
+                hideTopQuickPanel()
             }
             setOnLongClickListener { view ->
                 Toast.makeText(
@@ -554,18 +524,51 @@ class SamSprungOverlay : AppCompatActivity() {
             }
         }
 
+        findViewById<View>(R.id.panel_drag_handle)?.setOnClickListener {
+            hideTopQuickPanel()
+        }
+
+        val topQuickPanel = findViewById<LinearLayout>(R.id.top_quick_panel)
+        var panelTouchStartY = 0f
+        topQuickPanel?.setOnTouchListener { v, event ->
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    panelTouchStartY = event.rawY
+                    true
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    val dy = event.rawY - panelTouchStartY
+                    if (dy < -30.toPx) {
+                        hideTopQuickPanel()
+                        true
+                    } else {
+                        false
+                    }
+                }
+                MotionEvent.ACTION_UP -> {
+                    val dy = event.rawY - panelTouchStartY
+                    if (dy < -20.toPx) {
+                        hideTopQuickPanel()
+                    } else {
+                        v.performClick()
+                    }
+                    true
+                }
+                else -> false
+            }
+        }
+
         configureMenuVisibility(toolbar)
 
         if (prefs.getBoolean(getString(R.string.toggle_widgets).toPref, true)) {
             toolbar.findViewById<View>(R.id.toggle_widgets)
                 .setOnLongClickListener(View.OnLongClickListener {
-                if (viewPager.currentItem > 1) {
+                if (viewPager.currentItem > 2) {
                     toolbar.menu.findItem(R.id.toggle_widgets)
                         .setIcon(R.drawable.ic_delete_forever_24dp)
                     if (prefs.getBoolean(Preferences.prefReacts, true))
                         it.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
-                        // vibrator.vibrate(effectLongClick)
-                    bottomSheetBehavior.state = BottomSheetBehavior.STATE_COLLAPSED
+                    hideTopQuickPanel()
                     val index = viewPager.currentItem
                     val adapter = pagerAdapter as CoverStateAdapter
                     val fragment = adapter.getFragment(index)
@@ -596,17 +599,12 @@ class SamSprungOverlay : AppCompatActivity() {
                 return@OnLongClickListener true
             })
         }
-        coordinator.visibility = View.GONE
-        info.setOnClickListener {
-            bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
-        }
 
         launcherManager = LauncherManager(this)
 
         viewPager = findViewById(R.id.pager)
         viewPager.adapter = pagerAdapter
-        viewPager.setPageTransformer(when (prefs.getInt(Preferences.prefPaging, 0)) {
-            0 -> CardFlipTransformer().apply { isScalable = false }
+        viewPager.setPageTransformer(when (prefs.getInt(Preferences.prefPaging, -1)) {
             1 -> ClockSpinTransformer()
             2 -> DepthTransformer()
             3 -> FidgetSpinTransformer()
@@ -619,7 +617,7 @@ class SamSprungOverlay : AppCompatActivity() {
         viewPager.registerOnPageChangeCallback(object: ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
                 super.onPageSelected(position)
-                getSearchView()?.isGone = position != 1
+                getSearchView()?.isGone = position != 2
                 setScreenTimeout(findViewById(R.id.bottom_sheet_main))
                 with(prefs.edit()) {
                     putInt(Preferences.prefViewer, position)
@@ -652,49 +650,25 @@ class SamSprungOverlay : AppCompatActivity() {
         val bottomHandle = findViewById<View>(R.id.bottom_handle)
         bottomSheetBehaviorMain = BottomSheetBehavior.from(findViewById(R.id.bottom_sheet_main)).apply {
             isFitToContents = false
-            isDraggable = prefs.getBoolean(Preferences.prefSlider, true)
-            state = BottomSheetBehavior.STATE_COLLAPSED
+            isDraggable = false
+            state = BottomSheetBehavior.STATE_EXPANDED
             addBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
-                var hasConfigured = false
-                val handler = Handler(Looper.getMainLooper())
                 override fun onStateChanged(bottomSheet: View, newState: Int) {
-                    if (newState == BottomSheetBehavior.STATE_EXPANDED) {
-                        checkUpdatesWithDelay()
-                        isDraggable = false
-                        setActionButtonTimeout()
-                    } else if (newState == BottomSheetBehavior.STATE_COLLAPSED) {
-                        coordinator.alpha = 1.0f
-                        hasConfigured = false
-                        coordinator.visibility = View.GONE
-                        setBottomTheme(bottomHandle, menuButton)
-                        handler.postDelayed({
-                            setActionButtonTimeout()
-                        }, 300)
-                        isDraggable = prefs.getBoolean(Preferences.prefSlider, true)
+                    if (newState == BottomSheetBehavior.STATE_COLLAPSED) {
+                        state = BottomSheetBehavior.STATE_EXPANDED
                     }
                 }
-
-                override fun onSlide(bottomSheet: View, slideOffset: Float) {
-                    color = prefs.getInt(
-                        Preferences.prefColors, Color.rgb(255, 255, 255)
-                    )
-                    if (slideOffset > 0) {
-                        coordinator.alpha = slideOffset
-                        if (!hasConfigured) {
-                            hasConfigured = true
-                            handler.removeCallbacksAndMessages(null)
-                            fakeOverlay.visibility = View.GONE
-                            menuButton.hide()
-                            coordinator.visibility = View.VISIBLE
-                            val index = prefs.getInt(Preferences.prefViewer, viewPager.currentItem)
-                            viewPager.setCurrentItem(if (index < 2) 1 else index, false)
-                        }
-                    }
-                }
+                override fun onSlide(bottomSheet: View, slideOffset: Float) {}
             })
         }
+        fakeOverlay.visibility = View.GONE
+        menuButton.hide()
+        bottomHandle.visibility = View.GONE
+        coordinator.visibility = View.VISIBLE
+        coordinator.alpha = 1.0f
+        viewPager.setCurrentItem(1, false)
+
         setScreenTimeout(findViewById(R.id.bottom_sheet_main))
-        showBottomHandle(bottomHandle, menuButton)
 
         findViewById<AnimatedLinearLayout>(R.id.update_notice).isGone = true
 
@@ -792,7 +766,68 @@ class SamSprungOverlay : AppCompatActivity() {
     }
 
     fun closeMainDrawer() {
-        bottomSheetBehaviorMain.state = BottomSheetBehavior.STATE_COLLAPSED
+        viewPager.setCurrentItem(1, true)
+    }
+
+    fun showTopQuickPanel() {
+        val panel = findViewById<View>(R.id.top_quick_panel) ?: return
+        if (panel.visibility == View.VISIBLE) return
+        if (prefs.getBoolean(Preferences.prefReacts, true)) {
+            vibrator.vibrate(effectClick)
+        }
+        configureMenuVisibility(toolbar)
+        configureMenuIcons(toolbar)
+        val buttonAuth = findViewById<AppCompatImageView>(R.id.button_auth)
+        if (buttonAuth != null) {
+            val keyguardManager = getSystemService(KEYGUARD_SERVICE) as KeyguardManager
+            setKeyguardStatus(keyguardManager, buttonAuth)
+        }
+
+        panel.visibility = View.VISIBLE
+        panel.post {
+            val h: Float = if (panel.height > 0) panel.height.toFloat() else 260.toPx.toFloat()
+            panel.translationY = -h
+            panel.animate()
+                .translationY(0f)
+                .setDuration(220)
+                .setInterpolator(android.view.animation.DecelerateInterpolator())
+                .start()
+        }
+    }
+
+    fun hideTopQuickPanel() {
+        val panel = findViewById<View>(R.id.top_quick_panel) ?: return
+        if (panel.visibility != View.VISIBLE) return
+        if (prefs.getBoolean(Preferences.prefReacts, true)) {
+            vibrator.vibrate(effectClick)
+        }
+        val h: Float = if (panel.height > 0) panel.height.toFloat() else 260.toPx.toFloat()
+        panel.animate()
+            .translationY(-h)
+            .setDuration(180)
+            .setInterpolator(android.view.animation.AccelerateInterpolator())
+            .withEndAction {
+                panel.visibility = View.GONE
+            }
+            .start()
+    }
+
+    private var swipeStartY = 0f
+    private var swipeStartX = 0f
+    private var isPullDownGesture = false
+
+    @Deprecated("Deprecated in Java")
+    override fun onBackPressed() {
+        val panel = findViewById<View>(R.id.top_quick_panel)
+        if (panel != null && panel.visibility == View.VISIBLE) {
+            hideTopQuickPanel()
+            return
+        }
+        if (viewPager.currentItem != 1) {
+            viewPager.setCurrentItem(1, true)
+            return
+        }
+        super.onBackPressed()
     }
 
     fun getCoordinator() : CoordinatorLayout {
@@ -1249,6 +1284,36 @@ class SamSprungOverlay : AppCompatActivity() {
     }
 
     override fun dispatchTouchEvent(ev: MotionEvent?): Boolean {
+        if (ev != null) {
+            val panel = findViewById<View>(R.id.top_quick_panel)
+            when (ev.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    swipeStartX = ev.rawX
+                    swipeStartY = ev.rawY
+                    if (panel == null || panel.visibility != View.VISIBLE) {
+                        val isHomeClock = (viewPager.currentItem == 1)
+                        val triggerZone = if (isHomeClock) 160.toPx else 70.toPx
+                        isPullDownGesture = (swipeStartY < triggerZone)
+                    } else {
+                        isPullDownGesture = false
+                    }
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    if (isPullDownGesture) {
+                        val dy = ev.rawY - swipeStartY
+                        val dx = kotlin.math.abs(ev.rawX - swipeStartX)
+                        if (dy > 35.toPx && dy > dx * 1.3f) {
+                            isPullDownGesture = false
+                            showTopQuickPanel()
+                            return true
+                        }
+                    }
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    isPullDownGesture = false
+                }
+            }
+        }
         return super.dispatchTouchEvent(ev)
     }
 }

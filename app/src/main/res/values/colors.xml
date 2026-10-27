@@ -9,7 +9,7 @@
 
     <color name="bottomSheetTint">#BABBBBBB</color>
     <color name="backgroundTint">#44FFFFFF</color>
-    <color name="backgroundFlat">#BBFFFFFF</color>
+    <color name="backgroundFlat">#FF000000</color>
 
     <color name="snackbar_dark">#222</color>
     <!-- Equivalent to 0xff000000 -->
