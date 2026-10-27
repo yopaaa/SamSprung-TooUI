@@ -16,6 +16,7 @@ package com.yopa.samsprung
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.util.Log
 import android.app.KeyguardManager
 import android.app.NotificationManager
 import android.app.WallpaperManager
@@ -129,7 +130,20 @@ class SamSprungOverlay : AppCompatActivity() {
     private var offReceiver: BroadcastReceiver = object : BroadcastReceiver() {
         @SuppressLint("NotifyDataSetChanged")
         override fun onReceive(context: Context?, intent: Intent) {
-            if (intent.action == Intent.ACTION_SCREEN_OFF) onStopOverlay()
+            if (intent.action == Intent.ACTION_SCREEN_OFF) {
+                Log.d("SamSprungOverlay", "ACTION_SCREEN_OFF received: resetting UI to Home Clock")
+                hideTopQuickPanel()
+                if (::viewPager.isInitialized && viewPager.currentItem != 1) {
+                    viewPager.setCurrentItem(1, false)
+                }
+                if (isTorchEnabled) {
+                    try {
+                        camManager.setTorchMode(camManager.cameraIdList[0], false)
+                        isTorchEnabled = false
+                        updateQuickTilesState()
+                    } catch (_: Exception) {}
+                }
+            }
         }
     }
     private lateinit var battReceiver: BroadcastReceiver
@@ -231,6 +245,12 @@ class SamSprungOverlay : AppCompatActivity() {
             ContextCompat.registerReceiver(
                 this, offReceiver, it, ContextCompat.RECEIVER_NOT_EXPORTED
             )
+        }
+
+        try {
+            startForegroundService(Intent(applicationContext, OnBroadcastService::class.java))
+        } catch (e: Exception) {
+            Log.e("SamSprungOverlay", "Failed to start OnBroadcastService", e)
         }
 
         val coordinator = findViewById<CoordinatorLayout>(R.id.coordinator)
@@ -439,7 +459,7 @@ class SamSprungOverlay : AppCompatActivity() {
             if (keyguardManager.isDeviceLocked) {
                 onKeyguardClicked(keyguardManager, findViewById(R.id.button_auth))
             } else {
-                onStopOverlay()
+                screenOff()
             }
         }
 
@@ -1163,6 +1183,37 @@ class SamSprungOverlay : AppCompatActivity() {
         }, 3300)
     }
 
+    fun screenOff() {
+        Log.d("SamSprungOverlay", "screenOff() called")
+        if (prefs.getBoolean(Preferences.prefReacts, true)) {
+            try {
+                vibrator.vibrate(effectClick)
+            } catch (_: Exception) {}
+        }
+        val locked = AccessibilityObserver.performLockAction()
+        Log.d("SamSprungOverlay", "screenOff(): performLockAction result = $locked")
+        if (!locked) {
+            if (!AccessibilityObserver.hasEnabledService(this)) {
+                Toast.makeText(this, "Aktifkan Layanan Aksesibilitas SamSprung untuk screen off", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private val homeDoubleTapDetector by lazy {
+        GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
+            override fun onDoubleTap(e: MotionEvent): Boolean {
+                if (viewPager.currentItem == 1) {
+                    val panel = findViewById<View>(R.id.top_quick_panel)
+                    if (panel == null || panel.visibility != View.VISIBLE) {
+                        screenOff()
+                        return true
+                    }
+                }
+                return false
+            }
+        })
+    }
+
     fun onStopOverlay() {
         edgeGestureManager?.detach()
         edgeGestureManager = null
@@ -1240,6 +1291,12 @@ class SamSprungOverlay : AppCompatActivity() {
     override fun dispatchTouchEvent(ev: MotionEvent?): Boolean {
         if (ev != null) {
             val panel = findViewById<View>(R.id.top_quick_panel)
+            val isPanelVisible = (panel != null && panel.visibility == View.VISIBLE)
+            if (viewPager.currentItem == 1 && !isPanelVisible) {
+                if (homeDoubleTapDetector.onTouchEvent(ev)) {
+                    return true
+                }
+            }
             when (ev.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
                     swipeStartX = ev.rawX
