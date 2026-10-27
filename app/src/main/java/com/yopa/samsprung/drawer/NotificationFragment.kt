@@ -119,6 +119,15 @@ class NotificationFragment : Fragment(), NotificationAdapter.OnNoticeClickListen
         noticesView.adapter = adapter
         checkEmptyState(adapter)
 
+        adapter.onClearAllClicked = {
+            try {
+                val vibrator = requireContext().getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+                vibrator?.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK))
+            } catch (_: Exception) {}
+            adapter.clearAllNotifications()
+            checkEmptyState(adapter)
+        }
+
         if (hasNotificationListener(requireContext())) {
             NotificationReceiver.getReceiver()?.setNotificationsListener(adapter)
         }
@@ -129,6 +138,22 @@ class NotificationFragment : Fragment(), NotificationAdapter.OnNoticeClickListen
                 viewHolder: RecyclerView.ViewHolder,
                 target: RecyclerView.ViewHolder
             ): Boolean = false
+
+            override fun getSwipeDirs(
+                recyclerView: RecyclerView,
+                viewHolder: RecyclerView.ViewHolder
+            ): Int {
+                if (viewHolder !is NotificationAdapter.NoticeViewHolder) return 0
+                return super.getSwipeDirs(recyclerView, viewHolder)
+            }
+
+            override fun getSwipeThreshold(viewHolder: RecyclerView.ViewHolder): Float {
+                return 0.28f // Cukup 28% lebar kartu untuk menghapus
+            }
+
+            override fun getSwipeEscapeVelocity(defaultValue: Float): Float {
+                return defaultValue * 0.7f // Sentakan cepat memicu dismiss dengan mudah
+            }
 
             override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
                 if (direction == ItemTouchHelper.RIGHT) {
@@ -146,14 +171,19 @@ class NotificationFragment : Fragment(), NotificationAdapter.OnNoticeClickListen
                 actionState: Int,
                 isCurrentlyActive: Boolean
             ) {
+                if (viewHolder !is NotificationAdapter.NoticeViewHolder) return
                 if (isCurrentlyActive && dX > 0) {
                     recyclerView.parent?.requestDisallowInterceptTouchEvent(true)
                 }
+                // Efek memudar saat digeser ke kanan
+                val alpha = (1f - (dX / recyclerView.width.toFloat())).coerceIn(0.1f, 1f)
+                viewHolder.itemView.alpha = alpha
                 super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive)
             }
 
             override fun clearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
                 super.clearView(recyclerView, viewHolder)
+                viewHolder.itemView.alpha = 1f
                 recyclerView.parent?.requestDisallowInterceptTouchEvent(false)
             }
         }

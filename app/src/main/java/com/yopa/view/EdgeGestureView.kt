@@ -54,8 +54,16 @@ class EdgeGestureView(
     private val effectTriggered = VibrationEffect.createPredefined(VibrationEffect.EFFECT_TICK)
 
     private val idleWidthPx: Int = TypedValue.applyDimension(
-        TypedValue.COMPLEX_UNIT_DIP, 22f, resources.displayMetrics
+        TypedValue.COMPLEX_UNIT_DIP, 16f, resources.displayMetrics
     ).toInt()
+
+    var isGestureEnabled: Boolean = true
+        set(value) {
+            field = value
+            if (!value) {
+                resetState()
+            }
+        }
 
     private val expandedWidthPx: Int = TypedValue.applyDimension(
         TypedValue.COMPLEX_UNIT_DIP, 110f, resources.displayMetrics
@@ -98,6 +106,7 @@ class EdgeGestureView(
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent): Boolean {
+        if (!isGestureEnabled) return false
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
                 startRawX = event.rawX

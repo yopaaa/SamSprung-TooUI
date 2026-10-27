@@ -451,40 +451,6 @@ class SamSprungOverlay : AppCompatActivity() {
 
         updateQuickTilesState()
 
-        findViewById<View>(R.id.panel_drag_handle)?.setOnClickListener {
-            hideTopQuickPanel()
-        }
-
-        val topQuickPanel = findViewById<LinearLayout>(R.id.top_quick_panel)
-        var panelTouchStartY = 0f
-        topQuickPanel?.setOnTouchListener { v, event ->
-            when (event.actionMasked) {
-                MotionEvent.ACTION_DOWN -> {
-                    panelTouchStartY = event.rawY
-                    true
-                }
-                MotionEvent.ACTION_MOVE -> {
-                    val dy = event.rawY - panelTouchStartY
-                    if (dy < -30.toPx) {
-                        hideTopQuickPanel()
-                        true
-                    } else {
-                        false
-                    }
-                }
-                MotionEvent.ACTION_UP -> {
-                    val dy = event.rawY - panelTouchStartY
-                    if (dy < -20.toPx) {
-                        hideTopQuickPanel()
-                    } else {
-                        v.performClick()
-                    }
-                    true
-                }
-                else -> false
-            }
-        }
-
         configureMenuVisibility(toolbar)
 
         if (prefs.getBoolean(getString(R.string.toggle_widgets).toPref, true)) {
@@ -545,6 +511,8 @@ class SamSprungOverlay : AppCompatActivity() {
             override fun onPageSelected(position: Int) {
                 super.onPageSelected(position)
                 getSearchView()?.isGone = position != 2
+                // Di Halaman 0 (Notifikasi), matikan edge back kiri agar geser hapus notif tidak terhalang!
+                edgeGestureManager?.setLeftEdgeEnabled(position != 0)
                 setScreenTimeout(findViewById(R.id.bottom_sheet_main))
                 with(prefs.edit()) {
                     putInt(Preferences.prefViewer, position)
@@ -765,6 +733,7 @@ class SamSprungOverlay : AppCompatActivity() {
             vibrator.vibrate(effectClick)
         }
         viewPager.setCurrentItem(1, false)
+        edgeGestureManager?.setLeftEdgeEnabled(true)
         updateQuickTilesState()
 
         panel.visibility = View.VISIBLE
@@ -792,6 +761,7 @@ class SamSprungOverlay : AppCompatActivity() {
             .setInterpolator(android.view.animation.AccelerateInterpolator())
             .withEndAction {
                 panel.visibility = View.GONE
+                edgeGestureManager?.setLeftEdgeEnabled(viewPager.currentItem != 0)
             }
             .start()
     }

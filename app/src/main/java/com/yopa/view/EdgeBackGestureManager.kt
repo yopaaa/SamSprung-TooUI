@@ -77,6 +77,23 @@ class EdgeBackGestureManager(
         isAttached = false
     }
 
+    fun setLeftEdgeEnabled(enabled: Boolean) {
+        val view = leftEdgeView ?: return
+        view.isGestureEnabled = enabled
+        try {
+            val params = view.layoutParams as? WindowManager.LayoutParams ?: return
+            val flags = if (enabled) {
+                params.flags and WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE.inv()
+            } else {
+                params.flags or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
+            }
+            if (params.flags != flags) {
+                params.flags = flags
+                windowManager.updateViewLayout(view, params)
+            }
+        } catch (_: Exception) {}
+    }
+
     private fun createLayoutParams(gravity: Int, width: Int): WindowManager.LayoutParams {
         return WindowManager.LayoutParams(
             width,

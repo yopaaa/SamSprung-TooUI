@@ -51,17 +51,27 @@ import java.util.*
 class NotificationAdapter(
     private var activity: Activity,
     private var listener: OnNoticeClickListener
-) : RecyclerView.Adapter<NotificationAdapter.NoticeViewHolder>(),
+) : RecyclerView.Adapter<RecyclerView.ViewHolder>(),
     NotificationReceiver.NotificationsListener {
 
+    companion object {
+        const val TYPE_ITEM = 0
+        const val TYPE_FOOTER = 1
+    }
+
     private var sbNotifications: ArrayList<StatusBarNotification> = arrayListOf()
+    var onClearAllClicked: (() -> Unit)? = null
 
     override fun getItemCount(): Int {
-        return sbNotifications.size
+        return if (sbNotifications.isEmpty()) 0 else sbNotifications.size + 1
     }
 
     override fun getItemId(i: Int): Long {
-        return UUID.nameUUIDFromBytes(sbNotifications[i].key.toByteArray()).mostSignificantBits
+        return if (i < sbNotifications.size) {
+            UUID.nameUUIDFromBytes(sbNotifications[i].key.toByteArray()).mostSignificantBits
+        } else {
+            -1L
+        }
     }
 
     private fun getItem(i: Int): StatusBarNotification {
@@ -69,23 +79,48 @@ class NotificationAdapter(
     }
 
     override fun getItemViewType(position: Int): Int {
-        return position
+        return if (position == sbNotifications.size) TYPE_FOOTER else TYPE_ITEM
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): NoticeViewHolder {
-        return SimpleViewHolder(parent, listener, activity)
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        return if (viewType == TYPE_FOOTER) {
+            FooterViewHolder(
+                LayoutInflater.from(parent.context).inflate(
+                    R.layout.notification_footer, parent, false
+                )
+            )
+        } else {
+            SimpleViewHolder(parent, listener, activity)
+        }
     }
 
-    override fun onBindViewHolder(holder: NoticeViewHolder, position: Int) {
-        holder.itemView.setOnClickListener {
-            holder.listener?.onNoticeClicked(holder.itemView,
-                holder.bindingAdapterPosition, holder.notice)
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        if (holder is NoticeViewHolder) {
+            holder.itemView.setOnClickListener {
+                val pos = holder.bindingAdapterPosition
+                if (pos in 0 until sbNotifications.size) {
+                    holder.listener?.onNoticeClicked(holder.itemView, pos, holder.notice)
+                }
+            }
+            holder.itemView.setOnLongClickListener {
+                val pos = holder.bindingAdapterPosition
+                if (pos in 0 until sbNotifications.size) {
+                    holder.listener?.onNoticeLongClicked(holder.itemView, pos, holder.notice) == true
+                } else false
+            }
+            val pos = holder.bindingAdapterPosition
+            if (pos in 0 until sbNotifications.size) {
+                holder.bind(getItem(pos))
+            }
+        } else if (holder is FooterViewHolder) {
+            holder.buttonClearAll?.setOnClickListener {
+                onClearAllClicked?.invoke()
+            }
         }
-        holder.itemView.setOnLongClickListener {
-            holder.listener?.onNoticeLongClicked(holder.itemView,
-                holder.bindingAdapterPosition, holder.notice) == true
-        }
-        holder.bind(getItem(holder.bindingAdapterPosition))
+    }
+
+    class FooterViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        val buttonClearAll: View? = itemView.findViewById(R.id.button_clear_all)
     }
 
     abstract class NoticeViewHolder(
@@ -321,8 +356,13 @@ class NotificationAdapter(
             sbNotifications[update] = sbn
             this.notifyItemChanged(update, sbn)
         } else {
+            val wasEmpty = sbNotifications.isEmpty()
             sbNotifications.add(0, sbn)
-            this.notifyItemInserted(0)
+            if (wasEmpty) {
+                this.notifyDataSetChanged()
+            } else {
+                this.notifyItemInserted(0)
+            }
         }
     }
 
@@ -336,9 +376,28 @@ class NotificationAdapter(
             }
         }
         if (remove != -1) {
-            sbNotifications.remove(sbNotifications[remove])
-            this.notifyItemRemoved(remove)
+            sbNotifications.removeAt(remove)
+            if (sbNotifications.isEmpty()) {
+                this.notifyDataSetChanged()
+            } else {
+                this.notifyItemRemoved(remove)
+            }
         }
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
+    fun clearAllNotifications() {
+        val receiver = NotificationReceiver.getReceiver()
+        receiver?.cancelAllNotifications()
+        val iterator = sbNotifications.iterator()
+        while (iterator.hasNext()) {
+            val sbn = iterator.next()
+            if (sbn.isClearable) {
+                receiver?.cancelNotification(sbn.key)
+                iterator.remove()
+            }
+        }
+        notifyDataSetChanged()
     }
 
     interface OnNoticeClickListener {

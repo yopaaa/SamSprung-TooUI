@@ -398,15 +398,12 @@
                         </LinearLayout>
                     </LinearLayout>
 
-                    <!-- Drag Handle (Swipe up to dismiss) -->
+                    <!-- Legacy drag handle (hidden, exit is now via edge gesture) -->
                     <View
                         android:id="@+id/panel_drag_handle"
-                        android:layout_width="32dp"
-                        android:layout_height="3dp"
-                        android:layout_gravity="center_horizontal"
-                        android:layout_marginTop="4dp"
-                        android:layout_marginBottom="2dp"
-                        android:background="@drawable/rounded_layout" />
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:visibility="gone" />
 
                     <!-- Hidden legacy toolbar for safe compatibility -->
                     <androidx.appcompat.widget.Toolbar
