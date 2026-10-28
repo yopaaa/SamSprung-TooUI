@@ -21,4 +21,14 @@ object Preferences {
     const val prefRotate: String = "prefRotate"
     const val prefPaging: String = "prefPaging"
     const val prefUpdate: String = "prefUpdate"
+
+    // Quick Settings Toggles
+    const val prefQuickWifi: String = "toggle_wifi"
+    const val prefQuickBluetooth: String = "toggle_bluetooth"
+    const val prefQuickSound: String = "toggle_sound"
+    const val prefQuickRotation: String = "toggle_rotation"
+    const val prefQuickTorch: String = "toggle_torch"
+    const val prefQuickDnd: String = "toggle_dnd"
+    const val prefQuickNfc: String = "toggle_nfc"
+    const val prefQuickAuth: String = "toggle_auth"
 }

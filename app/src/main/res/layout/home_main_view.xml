@@ -152,6 +152,7 @@
 
                     <!-- Row 1: Wi-Fi, Bluetooth, Suara, Rotasi -->
                     <LinearLayout
+                        android:id="@+id/quick_tiles_row_1"
                         android:layout_width="match_parent"
                         android:layout_height="0dp"
                         android:layout_weight="1"
@@ -276,6 +277,7 @@
 
                     <!-- Row 2: Senter, DND, NFC, Kunci/Sidik Jari -->
                     <LinearLayout
+                        android:id="@+id/quick_tiles_row_2"
                         android:layout_width="match_parent"
                         android:layout_height="0dp"
                         android:layout_weight="1"

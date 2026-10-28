@@ -626,8 +626,27 @@ class SamSprungOverlay : AppCompatActivity() {
         val activeBg = R.drawable.quick_tile_bg_active
         val inactiveBg = R.drawable.quick_tile_bg
 
+        val showWifi = prefs.getBoolean(Preferences.prefQuickWifi, true)
+        val showBt = prefs.getBoolean(Preferences.prefQuickBluetooth, true)
+        val showSound = prefs.getBoolean(Preferences.prefQuickSound, true)
+        val showRotation = prefs.getBoolean(Preferences.prefQuickRotation, true)
+
+        val showTorch = prefs.getBoolean(Preferences.prefQuickTorch, true)
+        val showDnd = prefs.getBoolean(Preferences.prefQuickDnd, true)
+        val showNfc = prefs.getBoolean(Preferences.prefQuickNfc, true)
+        val showAuth = prefs.getBoolean(Preferences.prefQuickAuth, true)
+
+        // Row 1 Visibility
+        val row1 = findViewById<View>(R.id.quick_tiles_row_1)
+        row1?.visibility = if (showWifi || showBt || showSound || showRotation) View.VISIBLE else View.GONE
+
+        // Row 2 Visibility
+        val row2 = findViewById<View>(R.id.quick_tiles_row_2)
+        row2?.visibility = if (showTorch || showDnd || showNfc || showAuth) View.VISIBLE else View.GONE
+
         // Wi-Fi
         val tileWifi = findViewById<View>(R.id.tile_wifi)
+        tileWifi?.visibility = if (showWifi) View.VISIBLE else View.GONE
         val iconWifi = findViewById<AppCompatImageView>(R.id.icon_wifi)
         val isWifiOn = wifiManager.isWifiEnabled
         tileWifi?.setBackgroundResource(if (isWifiOn) activeBg else inactiveBg)
@@ -635,6 +654,7 @@ class SamSprungOverlay : AppCompatActivity() {
 
         // Bluetooth
         val tileBt = findViewById<View>(R.id.tile_bluetooth)
+        tileBt?.visibility = if (showBt) View.VISIBLE else View.GONE
         val iconBt = findViewById<AppCompatImageView>(R.id.icon_bluetooth)
         val isBtOn = try { bluetoothAdapter.isEnabled } catch (_: Exception) { false }
         tileBt?.setBackgroundResource(if (isBtOn) activeBg else inactiveBg)
@@ -642,6 +662,7 @@ class SamSprungOverlay : AppCompatActivity() {
 
         // Sound
         val tileSound = findViewById<View>(R.id.tile_sound)
+        tileSound?.visibility = if (showSound) View.VISIBLE else View.GONE
         val iconSound = findViewById<AppCompatImageView>(R.id.icon_sound)
         val textSound = findViewById<TextView>(R.id.text_sound)
         val isSoundNormal = (audioManager.ringerMode == AudioManager.RINGER_MODE_NORMAL)
@@ -651,6 +672,7 @@ class SamSprungOverlay : AppCompatActivity() {
 
         // Rotation
         val tileRotation = findViewById<View>(R.id.button_rotation)
+        tileRotation?.visibility = if (showRotation) View.VISIBLE else View.GONE
         val iconRotation = findViewById<AppCompatImageView>(R.id.icon_rotation)
         val textRotation = findViewById<TextView>(R.id.text_rotation)
         val isRotationLocked = prefs.getBoolean(Preferences.prefRotate, false)
@@ -660,12 +682,14 @@ class SamSprungOverlay : AppCompatActivity() {
 
         // Torch
         val tileTorch = findViewById<View>(R.id.tile_torch)
+        tileTorch?.visibility = if (showTorch) View.VISIBLE else View.GONE
         val iconTorch = findViewById<AppCompatImageView>(R.id.icon_torch)
         tileTorch?.setBackgroundResource(if (isTorchEnabled) activeBg else inactiveBg)
         iconTorch?.setImageResource(if (isTorchEnabled) R.drawable.ic_flashlight_on_24dp else R.drawable.ic_flashlight_off_24dp)
 
         // DND
         val tileDnd = findViewById<View>(R.id.tile_dnd)
+        tileDnd?.visibility = if (showDnd) View.VISIBLE else View.GONE
         val iconDnd = findViewById<AppCompatImageView>(R.id.icon_dnd)
         val isDndOn = (notificationManager.currentInterruptionFilter != NotificationManager.INTERRUPTION_FILTER_ALL)
         tileDnd?.setBackgroundResource(if (isDndOn) activeBg else inactiveBg)
@@ -673,6 +697,7 @@ class SamSprungOverlay : AppCompatActivity() {
 
         // NFC
         val tileNfc = findViewById<View>(R.id.tile_nfc)
+        tileNfc?.visibility = if (showNfc) View.VISIBLE else View.GONE
         val iconNfc = findViewById<AppCompatImageView>(R.id.icon_nfc)
         val isNfcOn = try { nfcAdapter?.isEnabled == true } catch (_: Exception) { false }
         tileNfc?.setBackgroundResource(if (isNfcOn) activeBg else inactiveBg)
@@ -680,10 +705,10 @@ class SamSprungOverlay : AppCompatActivity() {
 
         // Auth / Lock Tile
         val buttonAuth = findViewById<View>(R.id.button_auth)
+        buttonAuth?.visibility = if (showAuth) View.VISIBLE else View.GONE
         val iconAuth = findViewById<AppCompatImageView>(R.id.icon_auth)
         val textAuth = findViewById<TextView>(R.id.text_auth)
         val keyguardManager = getSystemService(KEYGUARD_SERVICE) as KeyguardManager
-        buttonAuth?.visibility = View.VISIBLE
         if (keyguardManager.isDeviceLocked) {
             buttonAuth?.setBackgroundResource(activeBg)
             iconAuth?.setImageResource(R.drawable.ic_fingerprint_24dp)

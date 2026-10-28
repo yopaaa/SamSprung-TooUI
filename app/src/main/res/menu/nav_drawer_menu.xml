@@ -10,6 +10,10 @@
             android:icon="@drawable/ic_wallpaper_24dp"
             android:title="Tampilan Layar Cover" />
         <item
+            android:id="@+id/nav_quick_settings"
+            android:icon="@drawable/ic_settings_24dp"
+            android:title="Pengaturan Cepat" />
+        <item
             android:id="@+id/nav_apps_manager"
             android:icon="@drawable/ic_widgets_24dp"
             android:title="Laci &amp; Visibilitas Aplikasi" />

@@ -203,6 +203,7 @@ class CoverPreferences : AppCompatActivity() {
         val (fragment, title) = when (itemId) {
             R.id.nav_permissions -> Pair(PermissionsScreenFragment(), "Izin & Aksesibilitas")
             R.id.nav_cover_screen -> Pair(CoverScreenFragment(), "Tampilan Layar Cover")
+            R.id.nav_quick_settings -> Pair(QuickSettingsScreenFragment(), "Pengaturan Cepat")
             R.id.nav_apps_manager -> Pair(AppsManagerScreenFragment(), "Laci & Visibilitas Aplikasi")
             R.id.nav_gestures -> Pair(GesturesScreenFragment(), "Gestur & Navigasi")
             R.id.nav_about -> Pair(AboutScreenFragment(), "Tentang & Bantuan")
