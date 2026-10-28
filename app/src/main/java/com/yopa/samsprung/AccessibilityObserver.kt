@@ -28,6 +28,7 @@ import android.util.Log
 import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
+import android.view.accessibility.AccessibilityWindowInfo
 import java.io.File
 
 class AccessibilityObserver : AccessibilityService() {
@@ -72,6 +73,114 @@ class AccessibilityObserver : AccessibilityService() {
 
         fun getWindowManager(): WindowManager? {
             return getInstance()?.getSystemService(WINDOW_SERVICE) as? WindowManager
+        }
+
+        fun getActiveInputNode(): AccessibilityNodeInfo? {
+            val inst = getInstance() ?: return null
+            inst.rootInActiveWindow?.let { root ->
+                val node = findInputInRoot(root)
+                if (node != null) return node
+            }
+            try {
+                for (win in inst.windows) {
+                    if (win.displayId == 1 || win.isFocused || win.isActive) {
+                        win.root?.let { root ->
+                            val node = findInputInRoot(root)
+                            if (node != null) return node
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Error checking inst.windows", e)
+            }
+            return null
+        }
+
+        private fun findInputInRoot(root: AccessibilityNodeInfo): AccessibilityNodeInfo? {
+            val focused = root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
+            if (focused != null && focused.isEditable) {
+                return focused
+            }
+            val byId = root.findAccessibilityNodeInfosByViewId("com.whatsapp:id/entry")
+            if (!byId.isNullOrEmpty() && byId[0].isEditable) {
+                return byId[0]
+            }
+            return findEditableNode(root)
+        }
+
+        fun getCurrentInputText(): String {
+            return getActiveInputNode()?.text?.toString() ?: ""
+        }
+
+        fun insertDirect(text: CharSequence): Boolean {
+            val node = getActiveInputNode() ?: return false
+            node.performAction(AccessibilityNodeInfo.ACTION_FOCUS)
+            val args = Bundle().apply {
+                putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)
+            }
+            val success = node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
+            Log.d(TAG, "insertDirect ACTION_SET_TEXT result: $success")
+            return success
+        }
+
+        fun performBackspace(): Boolean {
+            val node = getActiveInputNode() ?: return false
+            val current = node.text?.toString() ?: ""
+            if (current.isEmpty()) return false
+
+            val trimmed = current.trimEnd()
+            val lastSpace = trimmed.lastIndexOf(' ')
+            val newText = if (lastSpace >= 0) {
+                trimmed.substring(0, lastSpace)
+            } else if (trimmed.length > 1) {
+                trimmed.substring(0, trimmed.length - 1)
+            } else {
+                ""
+            }
+
+            node.performAction(AccessibilityNodeInfo.ACTION_FOCUS)
+            val args = Bundle().apply {
+                putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, newText)
+            }
+            val success = node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
+            Log.d(TAG, "performBackspace result: $success, newText='$newText'")
+            return success
+        }
+
+        fun performClear(): Boolean {
+            val node = getActiveInputNode() ?: return false
+            node.performAction(AccessibilityNodeInfo.ACTION_FOCUS)
+            val args = Bundle().apply {
+                putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, "")
+            }
+            return node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
+        }
+
+        fun performSend(): Boolean {
+            val inst = getInstance() ?: return false
+            inst.rootInActiveWindow?.let { root ->
+                val sendBtn = findSendButton(root)
+                if (sendBtn != null && sendBtn.performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
+                    Log.d(TAG, "performSend succeeded on rootInActiveWindow")
+                    return true
+                }
+            }
+            try {
+                for (win in inst.windows) {
+                    if (win.displayId == 1 || win.isActive) {
+                        win.root?.let { root ->
+                            val sendBtn = findSendButton(root)
+                            if (sendBtn != null && sendBtn.performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
+                                Log.d(TAG, "performSend succeeded on window displayId=${win.displayId}")
+                                return true
+                            }
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Error performing send across windows", e)
+            }
+            return false
         }
 
         fun insertText(text: CharSequence, autoSend: Boolean = false): Boolean {
