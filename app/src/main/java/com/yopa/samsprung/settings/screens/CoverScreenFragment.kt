@@ -126,6 +126,16 @@ class CoverScreenFragment : Fragment() {
             override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
 
+        // 4. Floating Voice Switch
+        val switchFloatingVoice = view.findViewById<SwitchCompat>(R.id.switch_floating_voice)
+        switchFloatingVoice.isChecked = prefs.getBoolean(Preferences.prefFloatingVoice, true)
+        switchFloatingVoice.setOnCheckedChangeListener { _, isChecked ->
+            prefs.edit().putBoolean(Preferences.prefFloatingVoice, isChecked).apply()
+        }
+        view.findViewById<View>(R.id.card_floating_voice).setOnClickListener {
+            switchFloatingVoice.toggle()
+        }
+
         // 5. Timeout SeekBar
         val textTimeoutVal = view.findViewById<TextView>(R.id.text_timeout_val)
         val seekbarTimeout = view.findViewById<SeekBar>(R.id.seekbar_timeout)

@@ -55,4 +55,17 @@ object DensityHelper {
             false
         }
     }
+
+    fun setDisplayImePolicy(policy: Int = 0, displayId: Int = 1): Boolean {
+        return try {
+            val wmGlobalClass = Class.forName("android.view.WindowManagerGlobal")
+            val wmService = HiddenApiBypass.invoke(wmGlobalClass, null, "getWindowManagerService")
+            HiddenApiBypass.invoke(wmService.javaClass, wmService, "setDisplayImePolicy", displayId, policy)
+            Log.d("DensityHelper", "setDisplayImePolicy($displayId, $policy) successful")
+            true
+        } catch (e: Throwable) {
+            Log.w("DensityHelper", "setDisplayImePolicy failed: ${e.message}")
+            false
+        }
+    }
 }

@@ -240,7 +240,69 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Card 4: Screen Timeout -->
+        <!-- Card 4: Floating Voice Button -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/card_floating_voice"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            app:cardCornerRadius="14dp"
+            app:cardElevation="1dp"
+            app:strokeWidth="1dp"
+            app:strokeColor="#26FFFFFF">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Tombol Dikte Suara Mengambang"
+                            android:textSize="16sp"
+                            android:textStyle="bold"
+                            android:textColor="?android:textColorPrimary" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="Menampilkan tombol mikrofon mengambang saat membuka aplikasi di layar cover untuk mengetik dengan suara atau balasan cepat."
+                            android:textSize="12sp"
+                            android:textColor="?android:textColorSecondary" />
+                    </LinearLayout>
+
+                    <androidx.appcompat.widget.SwitchCompat
+                        android:id="@+id/switch_floating_voice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="💡 Tips Offline: Anda dapat mengetik dengan suara 100% tanpa internet jika paket bahasa offline sudah diunduh di Pengaturan HP -> Manajemen Umum -> Voice Typing (Google) -> Pengenalan Suara Offline."
+                    android:textSize="11sp"
+                    android:textColor="#80D8FF" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Card 5: Screen Timeout -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

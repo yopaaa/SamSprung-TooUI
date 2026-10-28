@@ -38,6 +38,7 @@ import com.yopa.content.ScaledContext
 import com.yopa.os.Version
 import com.yopa.samsprung.*
 import com.yopa.samsprung.settings.Preferences
+import com.yopa.samsprung.speech.CoverVoiceInputManager
 import com.yopa.view.EdgeBackGestureManager
 import com.yopa.view.OnSwipeTouchListener
 import com.google.android.material.bottomsheet.BottomSheetBehavior
@@ -53,6 +54,7 @@ class AppDisplayListener : Service() {
     private lateinit var floatView: View
     private lateinit var bottomSheetBehavior: BottomSheetBehavior<View>
     private var edgeGestureManager: EdgeBackGestureManager? = null
+    private var voiceInputManager: CoverVoiceInputManager? = null
 
     private val vibrator by lazy {
         if (Version.isSnowCone)
@@ -218,6 +220,11 @@ class AppDisplayListener : Service() {
         var lastBackTime = 0L
         with (displayContext.getSystemService(WINDOW_SERVICE) as WindowManager) {
             addView(floatView, params)
+            DensityHelper.setDisplayImePolicy(0, 1)
+            voiceInputManager?.destroy()
+            voiceInputManager = CoverVoiceInputManager(displayContext, this).apply {
+                attachFloatingButton()
+            }
             edgeGestureManager?.detach()
             edgeGestureManager = EdgeBackGestureManager(displayContext, this) {
                 val now = System.currentTimeMillis()
@@ -334,6 +341,11 @@ class AppDisplayListener : Service() {
                 vibrator.vibrate(effectClick)
             bottomSheetBehavior.state = BottomSheetBehavior.STATE_COLLAPSED
         }
+        menu.findViewById<ImageView>(R.id.button_voice).setOnClickListener {
+            if (prefs.getBoolean(Preferences.prefReacts, true))
+                vibrator.vibrate(effectClick)
+            voiceInputManager?.showVoiceDialog()
+        }
         menu.findViewById<ImageView>(R.id.button_recent).setOnClickListener {
             if (prefs.getBoolean(Preferences.prefReacts, true))
                 vibrator.vibrate(effectClick)
@@ -399,6 +411,8 @@ class AppDisplayListener : Service() {
     }
 
     fun onDismissOverlay() {
+        voiceInputManager?.destroy()
+        voiceInputManager = null
         edgeGestureManager?.detach()
         edgeGestureManager = null
         try {

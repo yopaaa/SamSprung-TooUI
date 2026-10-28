@@ -55,4 +55,7 @@ object Preferences {
     const val SORT_ASC: String = "asc"
     const val SORT_DESC: String = "desc"
     const val prefPinnedApps: String = "pref_pinned_apps"
+
+    // Cover Screen Voice Input
+    const val prefFloatingVoice: String = "pref_floating_voice"
 }
