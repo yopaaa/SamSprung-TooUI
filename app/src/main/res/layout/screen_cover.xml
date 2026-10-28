@@ -178,6 +178,68 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
+        <!-- Card: Cover Screen DPI / Density -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            app:cardCornerRadius="14dp"
+            app:cardElevation="1dp"
+            app:strokeWidth="1dp"
+            app:strokeColor="#26FFFFFF">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Kerapatan Layar Cover (DPI)"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="?android:textColorPrimary" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="Sesuaikan skala agar aplikasi seperti YouTube, Chrome, dan Instagram tampil proporsional tanpa elemen terpotong/bertumpuk."
+                    android:textSize="12sp"
+                    android:textColor="?android:textColorSecondary" />
+
+                <Spinner
+                    android:id="@+id/spinner_cover_density"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:spinnerMode="dropdown"
+                    android:entries="@array/cover_density_entries" />
+
+                <TextView
+                    android:id="@+id/text_density_permission_hint"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:visibility="gone"
+                    android:text="⚠️ Butuh izin WRITE_SECURE_SETTINGS via ADB untuk mengubah DPI langsung dari aplikasi."
+                    android:textSize="11sp"
+                    android:textColor="#FFA726" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_copy_density_cmd"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:visibility="gone"
+                    style="@style/Widget.Material3.Button.TonalButton"
+                    android:textSize="12sp"
+                    android:text="Salin Perintah ADB" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
         <!-- Card 4: Screen Timeout -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"

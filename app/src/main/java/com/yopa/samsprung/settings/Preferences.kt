@@ -43,4 +43,10 @@ object Preferences {
     const val prefAppOrientationMode: String = "pref_app_orientation_mode"
     const val ORIENTATION_MODE_PORTRAIT: String = "portrait"
     const val ORIENTATION_MODE_AUTO: String = "auto"
+
+    // Cover Screen Display Density (DPI)
+    const val prefCoverDensity: String = "pref_cover_density"
+    const val DENSITY_DEFAULT: Int = 160
+    const val DENSITY_RECOMMENDED: Int = 120
+    const val DENSITY_COMPACT: Int = 115
 }

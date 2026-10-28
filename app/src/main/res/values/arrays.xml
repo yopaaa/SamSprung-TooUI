@@ -10,4 +10,18 @@
         <item>Toss</item>
         <item>None</item>
     </string-array>
+
+    <string-array name="cover_density_entries">
+        <item>Bawaan Samsung (160 DPI - Standar)</item>
+        <item>Proporsional (120 DPI - Direkomendasikan)</item>
+        <item>Kompak / Mini Phone (115 DPI - Optimal YouTube)</item>
+        <item>Ultra Kompak (100 DPI)</item>
+    </string-array>
+
+    <integer-array name="cover_density_values">
+        <item>160</item>
+        <item>120</item>
+        <item>115</item>
+        <item>100</item>
+    </integer-array>
 </resources>

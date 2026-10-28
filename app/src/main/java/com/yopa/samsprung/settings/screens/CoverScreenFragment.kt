@@ -65,7 +65,68 @@ class CoverScreenFragment : Fragment() {
             override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
 
-        // 4. Timeout SeekBar
+        // 4. Cover Density Spinner
+        val spinnerDensity = view.findViewById<Spinner>(R.id.spinner_cover_density)
+        val textDensityHint = view.findViewById<TextView>(R.id.text_density_permission_hint)
+        val btnCopyCmd = view.findViewById<MaterialButton>(R.id.btn_copy_density_cmd)
+
+        val densityValues = resources.getIntArray(R.array.cover_density_values)
+        val hasSecurePerm = com.yopa.samsprung.drawer.DensityHelper.hasPermission(requireContext())
+        if (!hasSecurePerm) {
+            textDensityHint.visibility = View.VISIBLE
+            btnCopyCmd.visibility = View.VISIBLE
+            btnCopyCmd.setOnClickListener {
+                val clipboard = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                val clip = android.content.ClipData.newPlainText("ADB Command", "adb shell pm grant com.yopa.samsprung android.permission.WRITE_SECURE_SETTINGS")
+                clipboard.setPrimaryClip(clip)
+                Toast.makeText(requireContext(), "Perintah ADB disalin ke clipboard", Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            textDensityHint.visibility = View.GONE
+            btnCopyCmd.visibility = View.GONE
+        }
+
+        val activeDensity = com.yopa.samsprung.drawer.DensityHelper.getCurrentDensity(requireContext(), 1)
+        val currentDensityPref = prefs.getInt(Preferences.prefCoverDensity, activeDensity)
+        val densityIndex = densityValues.indexOf(currentDensityPref).let { if (it >= 0) it else 0 }
+        spinnerDensity.setSelection(densityIndex)
+
+        var isDensityInit = true
+        spinnerDensity.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, v: View?, position: Int, id: Long) {
+                if (isDensityInit) {
+                    isDensityInit = false
+                    return
+                }
+                val selectedDensity = densityValues.getOrElse(position) { 160 }
+                if (!com.yopa.samsprung.drawer.DensityHelper.hasPermission(requireContext())) {
+                    Toast.makeText(
+                        requireContext(),
+                        "Izin WRITE_SECURE_SETTINGS belum aktif! Berikan izin via ADB.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    return
+                }
+                val success = com.yopa.samsprung.drawer.DensityHelper.setDensity(selectedDensity, 1)
+                if (success) {
+                    prefs.edit().putInt(Preferences.prefCoverDensity, selectedDensity).apply()
+                    Toast.makeText(
+                        requireContext(),
+                        "Kerapatan layar cover diubah ke $selectedDensity DPI",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                } else {
+                    Toast.makeText(
+                        requireContext(),
+                        "Gagal mengubah kerapatan layar cover",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
+        }
+
+        // 5. Timeout SeekBar
         val textTimeoutVal = view.findViewById<TextView>(R.id.text_timeout_val)
         val seekbarTimeout = view.findViewById<SeekBar>(R.id.seekbar_timeout)
         val currentTimeout = prefs.getInt(Preferences.prefDelays, 5)

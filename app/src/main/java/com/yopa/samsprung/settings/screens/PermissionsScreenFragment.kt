@@ -23,6 +23,7 @@ class PermissionsScreenFragment : Fragment() {
     private lateinit var switchOptimization: SwitchCompat
     private lateinit var switchUsage: SwitchCompat
     private lateinit var switchVoice: SwitchCompat
+    private lateinit var switchSecureSettings: SwitchCompat
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -40,8 +41,21 @@ class PermissionsScreenFragment : Fragment() {
         switchOptimization = view.findViewById(R.id.switch_optimization)
         switchUsage = view.findViewById(R.id.switch_usage)
         switchVoice = view.findViewById(R.id.switch_voice)
+        switchSecureSettings = view.findViewById(R.id.switch_secure_settings)
 
         val prefActivity = activity as? CoverPreferences
+
+        view.findViewById<View>(R.id.card_secure_settings).setOnClickListener {
+            val context = requireContext()
+            if (com.yopa.samsprung.drawer.DensityHelper.hasPermission(context)) {
+                android.widget.Toast.makeText(context, "Izin Pengaturan Sistem Aman sudah aktif.", android.widget.Toast.LENGTH_SHORT).show()
+            } else {
+                val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                val clip = android.content.ClipData.newPlainText("ADB Command", "adb shell pm grant com.yopa.samsprung android.permission.WRITE_SECURE_SETTINGS")
+                clipboard.setPrimaryClip(clip)
+                android.widget.Toast.makeText(context, "Perintah ADB disalin ke clipboard! Jalankan di PC/Terminal.", android.widget.Toast.LENGTH_LONG).show()
+            }
+        }
 
         view.findViewById<View>(R.id.card_overlay).setOnClickListener {
             try {
@@ -105,5 +119,6 @@ class PermissionsScreenFragment : Fragment() {
         switchOptimization.isChecked = prefActivity.ignoreBatteryOptimization()
         switchUsage.isChecked = prefActivity.hasUsageStatistics()
         switchVoice.isChecked = prefActivity.hasPermission(Manifest.permission.RECORD_AUDIO)
+        switchSecureSettings.isChecked = com.yopa.samsprung.drawer.DensityHelper.hasPermission(context)
     }
 }

@@ -42,6 +42,8 @@
     <!-- Google Play BS -->
     <uses-permission android:name="samsprung.permission.WRITE_SETTINGS" />
     <uses-permission android:name="samsprung.permission.READ_SETTINGS" />
+    <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS"
+        tools:ignore="ProtectedPermissions" />
 
     <uses-feature android:name="android.software.home_screen" android:required="false" />
     <uses-feature android:name="android.software.app_widgets" android:required="false" />
