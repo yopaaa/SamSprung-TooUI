@@ -77,5 +77,6 @@ class SamSprung : Application() {
         }
 
         setThemePreference()
+        com.yopa.samsprung.drawer.CoverScreenTimeoutManager.init(this)
     }
 }

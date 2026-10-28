@@ -78,6 +78,8 @@ class AppDisplayListener : Service() {
         var componentName: ComponentName? = if (null == launchActivity && null != launchPackage)
             packageManager.getLaunchIntentForPackage(launchPackage)?.component else null
 
+        CoverScreenTimeoutManager.userActivity("app_start")
+
 //        val pendingIntent: ByteArray? = intent.getByteArrayExtra("pendingIntent")
 //        if (null != pendingIntent) {
 //            val parcel = Parcel.obtain()
@@ -228,6 +230,7 @@ class AppDisplayListener : Service() {
             }
             edgeGestureManager?.detach()
             edgeGestureManager = EdgeBackGestureManager(displayContext, this) {
+                CoverScreenTimeoutManager.userActivity("edge_back")
                 val now = System.currentTimeMillis()
                 val backPerformed = AccessibilityObserver.performBackAction()
                 if (now - lastBackTime < 1800 || !backPerformed) {

@@ -453,7 +453,9 @@ class AccessibilityObserver : AccessibilityService() {
             info.eventTypes = AccessibilityEvent.TYPE_VIEW_CLICKED or
                     AccessibilityEvent.TYPE_VIEW_FOCUSED or
                     AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED or
-                    AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED
+                    AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED or
+                    AccessibilityEvent.TYPE_VIEW_SCROLLED or
+                    AccessibilityEvent.TYPE_VIEW_SELECTED
             info.feedbackType = AccessibilityServiceInfo.FEEDBACK_GENERIC
             info.notificationTimeout = 100
             info.flags = info.flags or
@@ -466,6 +468,15 @@ class AccessibilityObserver : AccessibilityService() {
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
+        when (event.eventType) {
+            AccessibilityEvent.TYPE_VIEW_CLICKED,
+            AccessibilityEvent.TYPE_VIEW_SCROLLED,
+            AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED,
+            AccessibilityEvent.TYPE_VIEW_SELECTED -> {
+                com.yopa.samsprung.drawer.CoverScreenTimeoutManager.userActivity("a11y_interaction")
+            }
+        }
+
         val src = try { event.source } catch (_: Exception) { null }
         if (src != null) {
             val isEditable = src.isEditable ||

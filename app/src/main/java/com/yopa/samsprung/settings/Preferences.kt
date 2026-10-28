@@ -12,6 +12,13 @@ object Preferences {
     const val prefShifts: String = "prefShifts"
     const val prefThemes: String = "prefThemes"
     const val prefDelays: String = "prefDelays"
+    const val DEFAULT_TIMEOUT_SECONDS: Int = 60
+
+    fun getCoverTimeoutSeconds(context: android.content.Context): Int {
+        val prefs = context.getSharedPreferences(prefsValue, android.content.Context.MODE_PRIVATE)
+        val v = prefs.getInt(prefDelays, DEFAULT_TIMEOUT_SECONDS)
+        return if (v < 15) DEFAULT_TIMEOUT_SECONDS else v
+    }
     const val prefSnooze: String = "prefSnooze"
     const val prefTapper: String = "prefTapper"
     const val prefReacts: String = "prefReacts"

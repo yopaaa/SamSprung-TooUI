@@ -267,6 +267,7 @@ class CoverVoiceInputManager(
 
     private fun startListening() {
         if (isListening) return
+        com.yopa.samsprung.drawer.CoverScreenTimeoutManager.userActivity("voice_start")
 
         try {
             // Read currently existing text from WhatsApp

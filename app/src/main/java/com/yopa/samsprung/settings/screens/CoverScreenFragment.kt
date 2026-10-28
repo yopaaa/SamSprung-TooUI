@@ -189,20 +189,45 @@ class CoverScreenFragment : Fragment() {
         // 5. Timeout SeekBar
         val textTimeoutVal = view.findViewById<TextView>(R.id.text_timeout_val)
         val seekbarTimeout = view.findViewById<SeekBar>(R.id.seekbar_timeout)
-        val currentTimeout = prefs.getInt(Preferences.prefDelays, 5)
+        var currentTimeout = Preferences.getCoverTimeoutSeconds(requireContext())
+        if (prefs.getInt(Preferences.prefDelays, Preferences.DEFAULT_TIMEOUT_SECONDS) < 15) {
+            prefs.edit().putInt(Preferences.prefDelays, Preferences.DEFAULT_TIMEOUT_SECONDS).apply()
+            currentTimeout = Preferences.DEFAULT_TIMEOUT_SECONDS
+        }
+        seekbarTimeout.min = 15
+        seekbarTimeout.max = 300
         seekbarTimeout.progress = currentTimeout
-        textTimeoutVal.text = "$currentTimeout detik"
+        textTimeoutVal.text = formatTimeoutText(currentTimeout)
 
         seekbarTimeout.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                textTimeoutVal.text = "$progress detik"
                 if (fromUser) {
-                    prefs.edit().putInt(Preferences.prefDelays, progress).apply()
+                    val snapped = when {
+                        progress <= 60 -> ((progress + 2) / 5) * 5
+                        else -> ((progress + 7) / 15) * 15
+                    }.coerceIn(15, 300)
+                    textTimeoutVal.text = formatTimeoutText(snapped)
+                    prefs.edit().putInt(Preferences.prefDelays, snapped).apply()
+                    com.yopa.samsprung.drawer.CoverScreenTimeoutManager.resetTimer()
+                    if (snapped != progress) {
+                        seekBar?.progress = snapped
+                    }
+                } else {
+                    textTimeoutVal.text = formatTimeoutText(progress)
                 }
             }
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
         })
+    }
+
+    private fun formatTimeoutText(seconds: Int): String {
+        return when {
+            seconds < 60 -> "$seconds detik"
+            seconds == 60 -> "1 menit (Standar)"
+            seconds % 60 == 0 -> "${seconds / 60} menit"
+            else -> "${seconds / 60} mnt ${seconds % 60} dtk"
+        }
     }
 
     override fun onResume() {

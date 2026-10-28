@@ -822,7 +822,7 @@
                         android:id="@+id/text_timeout_val"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="5 detik"
+                        android:text="1 menit (Standar)"
                         android:textSize="14sp"
                         android:textStyle="bold"
                         android:textColor="?colorPrimary" />
@@ -832,7 +832,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
-                    android:text="Durasi layar cover menyala sebelum otomatis mati."
+                    android:text="Durasi layar cover menyala sebelum otomatis mati karena tidak ada aktivitas (berlaku di jam/beranda maupun saat membuka aplikasi)."
                     android:textSize="12sp"
                     android:textColor="?android:textColorSecondary" />
 
@@ -841,9 +841,9 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
-                    android:min="4"
-                    android:max="60"
-                    android:progress="5" />
+                    android:min="15"
+                    android:max="300"
+                    android:progress="60" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 

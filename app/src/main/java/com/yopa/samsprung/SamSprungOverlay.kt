@@ -1265,20 +1265,9 @@ class SamSprungOverlay : AppCompatActivity() {
         }, 150)
     }
 
-    private val timeoutHandler = Handler(Looper.getMainLooper())
     private fun setScreenTimeout(anchorView: View) {
-        timeoutHandler.removeCallbacksAndMessages(null)
-        val timeout = prefs.getInt(Preferences.prefDelays, 5)
-        when {
-            timeout == 4 -> { anchorView.keepScreenOn = true }
-            timeout == 5 -> { anchorView.keepScreenOn = false }
-            timeout > 5 -> {
-                anchorView.keepScreenOn = true
-                timeoutHandler.postDelayed({
-                    anchorView.keepScreenOn = false
-                }, (timeout * 1000).toLong())
-            }
-        }
+        anchorView.keepScreenOn = true
+        com.yopa.samsprung.drawer.CoverScreenTimeoutManager.userActivity("overlay_view")
     }
 
     private val fabShowHandler = Handler(Looper.getMainLooper())
@@ -1330,9 +1319,9 @@ class SamSprungOverlay : AppCompatActivity() {
         edgeGestureManager?.detach()
         edgeGestureManager = null
         try { camManager.unregisterTorchCallback(torchCallback) } catch (_: Exception) { }
-        timeoutHandler.removeCallbacksAndMessages(null)
         fabShowHandler.removeCallbacksAndMessages(null)
         findViewById<View>(R.id.bottom_sheet_main).keepScreenOn = false
+        com.yopa.samsprung.drawer.CoverScreenTimeoutManager.cancel()
         try { unregisterReceiver(battReceiver) } catch (_: Exception) { }
         try { unregisterReceiver(offReceiver) } catch (_: Exception) { }
         finish()
@@ -1397,6 +1386,7 @@ class SamSprungOverlay : AppCompatActivity() {
             controller.hide(WindowInsetsCompat.Type.systemBars())
         }
         updateQuickTilesState()
+        com.yopa.samsprung.drawer.CoverScreenTimeoutManager.userActivity("overlay_resume")
     }
 
     override fun onStop() {
@@ -1406,6 +1396,7 @@ class SamSprungOverlay : AppCompatActivity() {
 
     override fun dispatchTouchEvent(ev: MotionEvent?): Boolean {
         if (ev != null) {
+            com.yopa.samsprung.drawer.CoverScreenTimeoutManager.userActivity("overlay_touch")
             val panel = findViewById<View>(R.id.top_quick_panel)
             val isPanelVisible = (panel != null && panel.visibility == View.VISIBLE)
             if (viewPager.currentItem == 1 && !isPanelVisible) {
