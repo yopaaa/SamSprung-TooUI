@@ -224,6 +224,7 @@ class AppDrawerFragment : Fragment(), DrawerAppAdapter.OnAppClickListener {
                     DividerItemDecoration.VERTICAL))
             }
         }
+        getFilteredPackageList()
     }
 
     override fun onDestroyView() {

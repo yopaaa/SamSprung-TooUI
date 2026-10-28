@@ -86,10 +86,38 @@ class PackageRetriever(val context: Context) {
         return packages
     }
 
+    fun getPinnedPackages(): MutableList<String> {
+        val raw = prefs.getString(Preferences.prefPinnedApps, "") ?: ""
+        if (raw.isBlank()) return mutableListOf()
+        return raw.split(",").filter { it.isNotBlank() }.toMutableList()
+    }
+
+    fun savePinnedPackages(pinnedList: List<String>) {
+        prefs.edit().putString(Preferences.prefPinnedApps, pinnedList.joinToString(",")).apply()
+    }
+
     fun getFilteredPackageList() : MutableList<ResolveInfo> {
-        val packages = if (hasUsageStatistics()) getUsagePackageList() else getPackageList()
+        val packages = getPackageList()
         packages.removeIf { getHiddenPackages().contains(it.activityInfo.packageName) }
-        return packages
+
+        val pinnedList = getPinnedPackages()
+        val sortOrder = prefs.getString(Preferences.prefAppSortOrder, Preferences.SORT_ASC) ?: Preferences.SORT_ASC
+
+        val pinnedMap = packages.associateBy { it.activityInfo.packageName }
+        val pinnedResult = mutableListOf<ResolveInfo>()
+        for (pkg in pinnedList) {
+            pinnedMap[pkg]?.let { pinnedResult.add(it) }
+        }
+
+        val unpinned = packages.filter { !pinnedList.contains(it.activityInfo.packageName) }.toMutableList()
+        val comparator = ResolveInfo.DisplayNameComparator(context.packageManager)
+        if (sortOrder == Preferences.SORT_DESC) {
+            Collections.sort(unpinned, Collections.reverseOrder(comparator))
+        } else {
+            Collections.sort(unpinned, comparator)
+        }
+
+        return (pinnedResult + unpinned).toMutableList()
     }
 
     private fun hasUsageStatistics() : Boolean {

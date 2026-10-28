@@ -49,4 +49,10 @@ object Preferences {
     const val DENSITY_DEFAULT: Int = 160
     const val DENSITY_RECOMMENDED: Int = 120
     const val DENSITY_COMPACT: Int = 115
+
+    // App Sorting & Pinned Apps
+    const val prefAppSortOrder: String = "pref_app_sort_order"
+    const val SORT_ASC: String = "asc"
+    const val SORT_DESC: String = "desc"
+    const val prefPinnedApps: String = "pref_pinned_apps"
 }

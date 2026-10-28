@@ -1,41 +1,62 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/hiddenItemContainer"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="2dp"
-    android:paddingStart="2dp"
-    android:paddingEnd="4dp"
-    android:layout_gravity="center"
+    android:paddingVertical="8dp"
+    android:paddingHorizontal="8dp"
+    android:gravity="center_vertical"
     android:orientation="horizontal"
-    tools:ignore="UseCompoundDrawables">
+    android:background="?attr/selectableItemBackground">
 
-        <androidx.appcompat.widget.AppCompatImageView
-            android:id="@+id/hiddenItemImage"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_marginStart="4dp"
-            android:layout_gravity="center"
-            android:contentDescription="@string/description_icon" />
+    <!-- Drag Handle (visible when pinned) -->
+    <androidx.appcompat.widget.AppCompatImageView
+        android:id="@+id/btnDragHandle"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_marginEnd="6dp"
+        android:padding="4dp"
+        android:visibility="gone"
+        app:srcCompat="@drawable/ic_drag_handle_24dp"
+        app:tint="?android:textColorSecondary"
+        android:contentDescription="Drag Handle" />
 
-        <TextView
-            android:id="@+id/hiddenItemText"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:paddingStart="8dp"
-            android:paddingEnd="0dp"
-            android:textSize="24sp"
-            android:textColor="?android:textColorPrimary"
-            android:layout_gravity="center"
-            android:gravity="center"
-            android:layout_height="wrap_content" />
+    <androidx.appcompat.widget.AppCompatImageView
+        android:id="@+id/hiddenItemImage"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginEnd="12dp"
+        android:contentDescription="@string/description_icon" />
 
-    <Switch
+    <TextView
+        android:id="@+id/hiddenItemText"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        android:textColor="?android:textColorPrimary"
+        android:singleLine="true"
+        android:ellipsize="end" />
+
+    <!-- Pin Button -->
+    <androidx.appcompat.widget.AppCompatImageView
+        android:id="@+id/btnPinItem"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:layout_marginEnd="6dp"
+        android:padding="6dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        app:srcCompat="@drawable/ic_pin_outline_24dp"
+        app:tint="?android:textColorSecondary"
+        android:contentDescription="Pin App" />
+
+    <!-- Hide/Show Switch -->
+    <androidx.appcompat.widget.SwitchCompat
         android:id="@+id/hiddenItemSwitch"
-        android:layout_width="56dp"
-        android:layout_height="48dp"
-        android:layout_marginEnd="4dp"
-        android:layout_gravity="end|center_vertical"
-        tools:ignore="UseSwitchCompatOrMaterialXml" />
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
 </LinearLayout>
