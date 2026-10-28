@@ -1,5 +1,5 @@
 <resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
-    <string name="app_name">SamSprung yopa</string>
+    <string name="app_name">TwoUI</string>
     <string name="permission_options">Permissions</string>
     <string name="permission_notifications">Notifications</string>
     <string name="details_notifications">View &amp; interact with notifications</string>
@@ -75,7 +75,7 @@
 
     <string name="sub_button">%1$s Monthly Donation</string>
     <string name="iap_button">%1$s One-Time Donation</string>
-    <string name="donation_thanks">Thanks for supporting TooUI!</string>
+    <string name="donation_thanks">Thanks for supporting TwoUI!</string>
 
     <string name="menu_recent">Recent</string>
     <string name="menu_home">Home</string>
@@ -92,16 +92,16 @@
 
     <string name="tiramisu_bluetooth">Bluetooth restricted (Android 13)</string>
 
-    <string name="incompatibility_warning">SamSprung is not compatible with apps that block the entire screen.\nPlease remove or disable this app to continue.</string>
-    <string name="cover_switch_warning">Main switch must be enabled to appear on cover.\nPress back button again to exit SamSprung TooUI.</string>
+    <string name="incompatibility_warning">TwoUI is not compatible with apps that block the entire screen.\nPlease remove or disable this app to continue.</string>
+    <string name="cover_switch_warning">Main switch must be enabled to appear on cover.\nPress back button again to exit TwoUI.</string>
 
     <string name="display_unavailable">Requires more than one display!</string>
 
     <string name="main_screen_required">Open device to continue</string>
     <string name="incompatible_fragment">Panel cannot be deleted</string>
 
-    <string name="accessibility_directions">Click confirm to open Accessibility\n\nInstalled apps -> SamSprung Navigation\n&#160;&#160;&#160;&#160;-> Toggle switch on -> Allow to enable.</string>
-    <string name="accessibility_service">SamSprung Navigation</string>
+    <string name="accessibility_directions">Click confirm to open Accessibility\n\nInstalled apps -> TwoUI Navigation\n&#160;&#160;&#160;&#160;-> Toggle switch on -> Allow to enable.</string>
+    <string name="accessibility_service">TwoUI Navigation</string>
     <string name="accessibility_details">Enable virtual navigation action and hardware support.</string>
 
     <string name="btn_close_tip">Close Launcher</string>

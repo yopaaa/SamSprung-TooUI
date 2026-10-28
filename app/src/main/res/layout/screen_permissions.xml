@@ -25,7 +25,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Pastikan izin penting di bawah aktif agar TooUI dapat berfungsi optimal di cover screen."
+            android:text="Pastikan izin penting di bawah aktif agar TwoUI dapat berfungsi optimal di cover screen."
             android:textSize="13sp"
             android:textColor="?android:textColorSecondary"
             android:layout_marginBottom="16dp" />
@@ -216,7 +216,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
-                        android:text="Mencegah sistem Android mematikan SamSprung saat berada di background."
+                        android:text="Mencegah sistem Android mematikan TwoUI saat berada di background."
                         android:textSize="12sp"
                         android:textColor="?android:textColorSecondary" />
                 </LinearLayout>
