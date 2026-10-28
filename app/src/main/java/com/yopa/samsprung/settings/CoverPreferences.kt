@@ -183,8 +183,17 @@ class CoverPreferences : AppCompatActivity() {
         }
 
         if (savedInstanceState == null) {
-            showScreen(R.id.nav_permissions)
-            navigationView.setCheckedItem(R.id.nav_permissions)
+            val screenExtra = intent.getStringExtra("screen")
+            val initialNav = when (screenExtra) {
+                "cover" -> R.id.nav_cover_screen
+                "quick" -> R.id.nav_quick_settings
+                "apps" -> R.id.nav_apps_manager
+                "gestures" -> R.id.nav_gestures
+                "about" -> R.id.nav_about
+                else -> intent.getIntExtra("initial_nav", R.id.nav_permissions)
+            }
+            showScreen(initialNav)
+            navigationView.setCheckedItem(initialNav)
         }
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
@@ -196,6 +205,25 @@ class CoverPreferences : AppCompatActivity() {
                 }
             }
         })
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        val screenExtra = intent.getStringExtra("screen")
+        val targetNav = when (screenExtra) {
+            "cover" -> R.id.nav_cover_screen
+            "quick" -> R.id.nav_quick_settings
+            "apps" -> R.id.nav_apps_manager
+            "gestures" -> R.id.nav_gestures
+            "about" -> R.id.nav_about
+            "permissions" -> R.id.nav_permissions
+            else -> intent.getIntExtra("initial_nav", -1)
+        }
+        if (targetNav != -1) {
+            showScreen(targetNav)
+            navigationView.setCheckedItem(targetNav)
+        }
     }
 
     private fun showScreen(itemId: Int) {

@@ -6,9 +6,11 @@
     android:layout_height="match_parent"
     android:background="@android:color/transparent">
 
-    <!-- Main Clock & Date Container -->
+    <!-- ============================================== -->
+    <!-- STYLE 1: Classic Centered (Default)            -->
+    <!-- ============================================== -->
     <LinearLayout
-        android:id="@+id/clock_container"
+        android:id="@+id/clock_container_style1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
@@ -68,6 +70,233 @@
                 android:textColor="@android:color/white"
                 android:text="100%" />
         </LinearLayout>
+    </LinearLayout>
+
+    <!-- ============================================== -->
+    <!-- STYLE 2: Minimalist Left-Aligned               -->
+    <!-- ============================================== -->
+    <LinearLayout
+        android:id="@+id/clock_container_style2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_centerVertical="true"
+        android:layout_marginStart="24dp"
+        android:visibility="gone"
+        android:orientation="vertical">
+
+        <TextClock
+            android:id="@+id/home_clock_s2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:format12Hour="hh:mm"
+            android:format24Hour="HH:mm"
+            android:textSize="72sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/white"
+            android:fontFamily="sans-serif-light"
+            android:includeFontPadding="false"
+            android:shadowColor="#99000000"
+            android:shadowRadius="10" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextClock
+                android:id="@+id/home_date_s2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:format12Hour="EEE, d MMM"
+                android:format24Hour="EEE, d MMM"
+                android:textSize="14sp"
+                android:textColor="#E6FFFFFF"
+                android:shadowColor="#80000000"
+                android:shadowRadius="6" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="6dp"
+                android:text="•"
+                android:textSize="14sp"
+                android:textColor="#99FFFFFF" />
+
+            <TextView
+                android:id="@+id/home_battery_s2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:textColor="#00E676"
+                android:text="100%"
+                android:shadowColor="#80000000"
+                android:shadowRadius="6" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- ============================================== -->
+    <!-- STYLE 3: Stacked Vertical (HH above mm)        -->
+    <!-- ============================================== -->
+    <LinearLayout
+        android:id="@+id/clock_container_style3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
+        android:layout_marginStart="24dp"
+        android:gravity="center_vertical"
+        android:visibility="gone"
+        android:orientation="horizontal">
+
+        <!-- Column 1: Stacked Time -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
+
+            <TextClock
+                android:id="@+id/home_clock_s3_hour"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:format12Hour="hh"
+                android:format24Hour="HH"
+                android:textSize="64sp"
+                android:textStyle="bold"
+                android:textColor="@android:color/white"
+                android:fontFamily="sans-serif-black"
+                android:includeFontPadding="false"
+                android:shadowColor="#99000000"
+                android:shadowRadius="10" />
+
+            <TextClock
+                android:id="@+id/home_clock_s3_min"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:format12Hour="mm"
+                android:format24Hour="mm"
+                android:textSize="64sp"
+                android:textStyle="bold"
+                android:textColor="#00E676"
+                android:fontFamily="sans-serif-black"
+                android:includeFontPadding="false"
+                android:shadowColor="#99000000"
+                android:shadowRadius="10" />
+        </LinearLayout>
+
+        <!-- Column 2: Date & Battery Info -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:orientation="vertical">
+
+            <TextClock
+                android:id="@+id/home_date_s3_day"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:format12Hour="EEEE"
+                android:format24Hour="EEEE"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@android:color/white"
+                android:shadowColor="#80000000"
+                android:shadowRadius="6" />
+
+            <TextClock
+                android:id="@+id/home_date_s3_date"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:format12Hour="d MMMM"
+                android:format24Hour="d MMMM"
+                android:textSize="13sp"
+                android:textColor="#CCFFFFFF"
+                android:shadowColor="#80000000"
+                android:shadowRadius="6" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/rounded_layout"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="2dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/home_battery_s3"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:textColor="@android:color/white"
+                    android:text="100%" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- ============================================== -->
+    <!-- STYLE 4: Modern Compact Pill                   -->
+    <!-- ============================================== -->
+    <LinearLayout
+        android:id="@+id/clock_container_style4"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:gravity="center"
+        android:visibility="gone"
+        android:orientation="vertical">
+
+        <!-- Top Date Chip -->
+        <TextClock
+            android:id="@+id/home_date_s4"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:format12Hour="EEEE • d MMM"
+            android:format24Hour="EEEE • d MMM"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:textColor="#00E676"
+            android:shadowColor="#80000000"
+            android:shadowRadius="6" />
+
+        <!-- Time in Pill -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:background="@drawable/rounded_layout_themed"
+            android:paddingHorizontal="20dp"
+            android:paddingVertical="4dp">
+
+            <TextClock
+                android:id="@+id/home_clock_s4"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:format12Hour="hh:mm"
+                android:format24Hour="HH:mm"
+                android:textSize="56sp"
+                android:textStyle="bold"
+                android:textColor="@android:color/white"
+                android:fontFamily="sans-serif-medium"
+                android:includeFontPadding="false" />
+        </LinearLayout>
+
+        <!-- Battery Status -->
+        <TextView
+            android:id="@+id/home_battery_s4"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:textSize="12sp"
+            android:textColor="#CCFFFFFF"
+            android:text="Baterai 100%"
+            android:shadowColor="#80000000"
+            android:shadowRadius="6" />
     </LinearLayout>
 
 </RelativeLayout>

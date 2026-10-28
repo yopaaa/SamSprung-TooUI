@@ -2,6 +2,7 @@ package com.yopa.samsprung.settings.screens
 
 import android.content.Context
 import android.graphics.BitmapFactory
+import android.graphics.Color
 import android.graphics.ImageDecoder
 import android.graphics.drawable.AnimatedImageDrawable
 import android.net.Uri
@@ -19,6 +20,7 @@ import androidx.appcompat.widget.AppCompatImageView
 import androidx.appcompat.widget.SwitchCompat
 import androidx.fragment.app.Fragment
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.card.MaterialCardView
 import com.yopa.samsprung.R
 import com.yopa.samsprung.settings.CoverPreferences
 import com.yopa.samsprung.settings.Preferences
@@ -30,6 +32,19 @@ class CoverScreenFragment : Fragment() {
     private lateinit var layoutWallpaperEmpty: View
     private lateinit var tvWallpaperBadge: TextView
     private lateinit var btnRemoveWallpaper: MaterialButton
+
+    private lateinit var cardClockS1: MaterialCardView
+    private lateinit var cardClockS2: MaterialCardView
+    private lateinit var cardClockS3: MaterialCardView
+    private lateinit var cardClockS4: MaterialCardView
+    private lateinit var tvClockLabelS1: TextView
+    private lateinit var tvClockLabelS2: TextView
+    private lateinit var tvClockLabelS3: TextView
+    private lateinit var tvClockLabelS4: TextView
+    private lateinit var previewClockS1: View
+    private lateinit var previewClockS2: View
+    private lateinit var previewClockS3: View
+    private lateinit var previewClockS4: View
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -50,6 +65,35 @@ class CoverScreenFragment : Fragment() {
         switchRotation.setOnCheckedChangeListener { _, isChecked ->
             prefs.edit().putBoolean(Preferences.prefRotate, isChecked).apply()
         }
+
+        // 1.5 Clock Style Selection
+        cardClockS1 = view.findViewById(R.id.card_clock_s1)
+        cardClockS2 = view.findViewById(R.id.card_clock_s2)
+        cardClockS3 = view.findViewById(R.id.card_clock_s3)
+        cardClockS4 = view.findViewById(R.id.card_clock_s4)
+
+        tvClockLabelS1 = view.findViewById(R.id.tv_clock_label_s1)
+        tvClockLabelS2 = view.findViewById(R.id.tv_clock_label_s2)
+        tvClockLabelS3 = view.findViewById(R.id.tv_clock_label_s3)
+        tvClockLabelS4 = view.findViewById(R.id.tv_clock_label_s4)
+
+        previewClockS1 = view.findViewById(R.id.preview_clock_s1)
+        previewClockS2 = view.findViewById(R.id.preview_clock_s2)
+        previewClockS3 = view.findViewById(R.id.preview_clock_s3)
+        previewClockS4 = view.findViewById(R.id.preview_clock_s4)
+
+        val currentClockStyle = prefs.getInt(Preferences.prefClockStyle, Preferences.CLOCK_STYLE_1)
+        updateClockStyleUI(currentClockStyle)
+
+        fun selectClockStyle(style: Int) {
+            prefs.edit().putInt(Preferences.prefClockStyle, style).apply()
+            updateClockStyleUI(style)
+        }
+
+        cardClockS1.setOnClickListener { selectClockStyle(Preferences.CLOCK_STYLE_1) }
+        cardClockS2.setOnClickListener { selectClockStyle(Preferences.CLOCK_STYLE_2) }
+        cardClockS3.setOnClickListener { selectClockStyle(Preferences.CLOCK_STYLE_3) }
+        cardClockS4.setOnClickListener { selectClockStyle(Preferences.CLOCK_STYLE_4) }
 
         // 2. Wallpaper Preview & Buttons
         ivWallpaperPreview = view.findViewById(R.id.iv_wallpaper_preview)
@@ -177,6 +221,44 @@ class CoverScreenFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         updateWallpaperPreview()
+        val prefs = requireActivity().getSharedPreferences(Preferences.prefsValue, Context.MODE_PRIVATE)
+        updateClockStyleUI(prefs.getInt(Preferences.prefClockStyle, Preferences.CLOCK_STYLE_1))
+    }
+
+    private fun updateClockStyleUI(selectedStyle: Int) {
+        if (!::cardClockS1.isInitialized) return
+        val greenColor = Color.parseColor("#00E676")
+        val dimStroke = Color.parseColor("#26FFFFFF")
+        val selectedBg = Color.parseColor("#222222")
+        val unselectedBg = Color.parseColor("#1A1A1A")
+        val textDim = Color.parseColor("#B3FFFFFF")
+
+        val strokeSelected = (2 * resources.displayMetrics.density).toInt()
+        val strokeUnselected = (1 * resources.displayMetrics.density).toInt()
+
+        fun updateCard(card: MaterialCardView, label: TextView, isSelected: Boolean) {
+            if (isSelected) {
+                card.strokeWidth = strokeSelected
+                card.strokeColor = greenColor
+                card.setCardBackgroundColor(selectedBg)
+                label.setTextColor(greenColor)
+            } else {
+                card.strokeWidth = strokeUnselected
+                card.strokeColor = dimStroke
+                card.setCardBackgroundColor(unselectedBg)
+                label.setTextColor(textDim)
+            }
+        }
+
+        updateCard(cardClockS1, tvClockLabelS1, selectedStyle == Preferences.CLOCK_STYLE_1)
+        updateCard(cardClockS2, tvClockLabelS2, selectedStyle == Preferences.CLOCK_STYLE_2)
+        updateCard(cardClockS3, tvClockLabelS3, selectedStyle == Preferences.CLOCK_STYLE_3)
+        updateCard(cardClockS4, tvClockLabelS4, selectedStyle == Preferences.CLOCK_STYLE_4)
+
+        previewClockS1.visibility = if (selectedStyle == Preferences.CLOCK_STYLE_1) View.VISIBLE else View.GONE
+        previewClockS2.visibility = if (selectedStyle == Preferences.CLOCK_STYLE_2) View.VISIBLE else View.GONE
+        previewClockS3.visibility = if (selectedStyle == Preferences.CLOCK_STYLE_3) View.VISIBLE else View.GONE
+        previewClockS4.visibility = if (selectedStyle == Preferences.CLOCK_STYLE_4) View.VISIBLE else View.GONE
     }
 
     fun updateWallpaperPreview() {
@@ -222,8 +304,8 @@ class CoverScreenFragment : Fragment() {
         // Empty state
         ivWallpaperPreview.setImageDrawable(null)
         ivWallpaperPreview.visibility = View.GONE
-        layoutWallpaperEmpty.visibility = View.VISIBLE
-        tvWallpaperBadge.text = "Layar Cover (512×260)"
+        layoutWallpaperEmpty.visibility = View.GONE
+        tvWallpaperBadge.text = "Wallpaper Default (512×260)"
         btnRemoveWallpaper.isEnabled = false
     }
 }

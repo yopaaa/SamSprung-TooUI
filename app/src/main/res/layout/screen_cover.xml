@@ -78,6 +78,214 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
+        <!-- Card 1.5: Clock Style Selection -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/card_clock_style"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            app:cardCornerRadius="14dp"
+            app:cardElevation="1dp"
+            app:strokeWidth="1dp"
+            app:strokeColor="#26FFFFFF">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Style Jam Layar Cover"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="?android:textColorPrimary" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="Pilih gaya tampilan jam pada cover screen (preview terlihat langsung pada wallpaper di bawah)."
+                    android:textSize="12sp"
+                    android:textColor="?android:textColorSecondary" />
+
+                <!-- Clock Style Option Cards Row -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:orientation="horizontal">
+
+                    <!-- Style 1 (Classic Centered) -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/card_clock_s1"
+                        android:layout_width="0dp"
+                        android:layout_height="72dp"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="4dp"
+                        app:cardCornerRadius="10dp"
+                        app:cardElevation="0dp"
+                        app:strokeWidth="2dp"
+                        app:strokeColor="#00E676"
+                        app:cardBackgroundColor="#222222">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:gravity="center"
+                            android:orientation="vertical"
+                            android:padding="4dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="12:00"
+                                android:textSize="13sp"
+                                android:textStyle="bold"
+                                android:textColor="@android:color/white" />
+
+                            <TextView
+                                android:id="@+id/tv_clock_label_s1"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="Style 1\nKlasik"
+                                android:gravity="center"
+                                android:textSize="9.5sp"
+                                android:textColor="#00E676" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <!-- Style 2 (Minimalist Left) -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/card_clock_s2"
+                        android:layout_width="0dp"
+                        android:layout_height="72dp"
+                        android:layout_weight="1"
+                        android:layout_marginHorizontal="2dp"
+                        app:cardCornerRadius="10dp"
+                        app:cardElevation="0dp"
+                        app:strokeWidth="1dp"
+                        app:strokeColor="#26FFFFFF"
+                        app:cardBackgroundColor="#1A1A1A">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:gravity="center"
+                            android:orientation="vertical"
+                            android:padding="4dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="12:00 •"
+                                android:textSize="13sp"
+                                android:fontFamily="sans-serif-light"
+                                android:textStyle="bold"
+                                android:textColor="@android:color/white" />
+
+                            <TextView
+                                android:id="@+id/tv_clock_label_s2"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="Style 2\nMinimalis"
+                                android:gravity="center"
+                                android:textSize="9.5sp"
+                                android:textColor="#B3FFFFFF" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <!-- Style 3 (Stacked Vertical) -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/card_clock_s3"
+                        android:layout_width="0dp"
+                        android:layout_height="72dp"
+                        android:layout_weight="1"
+                        android:layout_marginHorizontal="2dp"
+                        app:cardCornerRadius="10dp"
+                        app:cardElevation="0dp"
+                        app:strokeWidth="1dp"
+                        app:strokeColor="#26FFFFFF"
+                        app:cardBackgroundColor="#1A1A1A">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:gravity="center"
+                            android:orientation="vertical"
+                            android:padding="4dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="12\n00"
+                                android:textSize="10.5sp"
+                                android:lineSpacingExtra="-4dp"
+                                android:textStyle="bold"
+                                android:textColor="#00E676" />
+
+                            <TextView
+                                android:id="@+id/tv_clock_label_s3"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="1dp"
+                                android:text="Style 3\nBertumpuk"
+                                android:gravity="center"
+                                android:textSize="9.5sp"
+                                android:textColor="#B3FFFFFF" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <!-- Style 4 (Modern Pill) -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/card_clock_s4"
+                        android:layout_width="0dp"
+                        android:layout_height="72dp"
+                        android:layout_weight="1"
+                        android:layout_marginStart="4dp"
+                        app:cardCornerRadius="10dp"
+                        app:cardElevation="0dp"
+                        app:strokeWidth="1dp"
+                        app:strokeColor="#26FFFFFF"
+                        app:cardBackgroundColor="#1A1A1A">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:gravity="center"
+                            android:orientation="vertical"
+                            android:padding="4dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:background="@drawable/rounded_layout_themed"
+                                android:paddingHorizontal="6dp"
+                                android:paddingVertical="1dp"
+                                android:text="12:00"
+                                android:textSize="11sp"
+                                android:textStyle="bold"
+                                android:textColor="@android:color/white" />
+
+                            <TextView
+                                android:id="@+id/tv_clock_label_s4"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="3dp"
+                                android:text="Style 4\nModern"
+                                android:gravity="center"
+                                android:textSize="9.5sp"
+                                android:textColor="#B3FFFFFF" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
         <!-- Card 2: Wallpaper -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
@@ -141,6 +349,7 @@
                             android:layout_height="wrap_content"
                             android:layout_gravity="center"
                             android:gravity="center"
+                            android:visibility="gone"
                             android:orientation="vertical">
 
                             <androidx.appcompat.widget.AppCompatImageView
@@ -157,6 +366,258 @@
                                 android:text="Belum ada wallpaper kustom"
                                 android:textSize="12sp"
                                 android:textColor="#80FFFFFF" />
+                        </LinearLayout>
+
+                        <!-- ============================================== -->
+                        <!-- Clock Style Preview Overlays                   -->
+                        <!-- ============================================== -->
+
+                        <!-- Style 1 Preview (Classic Centered) -->
+                        <LinearLayout
+                            android:id="@+id/preview_clock_s1"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center"
+                            android:gravity="center"
+                            android:orientation="vertical">
+
+                            <TextClock
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:format12Hour="hh:mm"
+                                android:format24Hour="HH:mm"
+                                android:textSize="40sp"
+                                android:textStyle="bold"
+                                android:textColor="@android:color/white"
+                                android:fontFamily="sans-serif-medium"
+                                android:includeFontPadding="false"
+                                android:shadowColor="#80000000"
+                                android:shadowDy="2"
+                                android:shadowRadius="8" />
+
+                            <TextClock
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="1dp"
+                                android:format12Hour="EEEE, d MMMM"
+                                android:format24Hour="EEEE, d MMMM"
+                                android:textSize="9sp"
+                                android:textColor="#E6FFFFFF"
+                                android:shadowColor="#80000000"
+                                android:shadowRadius="4" />
+
+                            <LinearLayout
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="3dp"
+                                android:background="@drawable/rounded_layout"
+                                android:paddingHorizontal="6dp"
+                                android:paddingVertical="1dp">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="100%"
+                                    android:textSize="8sp"
+                                    android:textStyle="bold"
+                                    android:textColor="@android:color/white" />
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <!-- Style 2 Preview (Minimalist Left) -->
+                        <LinearLayout
+                            android:id="@+id/preview_clock_s2"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="start|center_vertical"
+                            android:layout_marginStart="20dp"
+                            android:visibility="gone"
+                            android:orientation="vertical">
+
+                            <TextClock
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:format12Hour="hh:mm"
+                                android:format24Hour="HH:mm"
+                                android:textSize="34sp"
+                                android:textStyle="bold"
+                                android:textColor="@android:color/white"
+                                android:fontFamily="sans-serif-light"
+                                android:includeFontPadding="false"
+                                android:shadowColor="#99000000"
+                                android:shadowRadius="8" />
+
+                            <LinearLayout
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="1dp"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <TextClock
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:format12Hour="EEE, d MMM"
+                                    android:format24Hour="EEE, d MMM"
+                                    android:textSize="9sp"
+                                    android:textColor="#E6FFFFFF"
+                                    android:shadowColor="#80000000"
+                                    android:shadowRadius="4" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginHorizontal="4dp"
+                                    android:text="•"
+                                    android:textSize="9sp"
+                                    android:textColor="#99FFFFFF" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="100%"
+                                    android:textSize="8.5sp"
+                                    android:textStyle="bold"
+                                    android:textColor="#00E676" />
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <!-- Style 3 Preview (Stacked Vertical) -->
+                        <LinearLayout
+                            android:id="@+id/preview_clock_s3"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="start|center_vertical"
+                            android:layout_marginStart="20dp"
+                            android:gravity="center_vertical"
+                            android:visibility="gone"
+                            android:orientation="horizontal">
+
+                            <LinearLayout
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:gravity="center_horizontal"
+                                android:orientation="vertical">
+
+                                <TextClock
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:format12Hour="hh"
+                                    android:format24Hour="HH"
+                                    android:textSize="28sp"
+                                    android:textStyle="bold"
+                                    android:textColor="@android:color/white"
+                                    android:fontFamily="sans-serif-black"
+                                    android:includeFontPadding="false"
+                                    android:shadowColor="#99000000"
+                                    android:shadowRadius="6" />
+
+                                <TextClock
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:format12Hour="mm"
+                                    android:format24Hour="mm"
+                                    android:textSize="28sp"
+                                    android:textStyle="bold"
+                                    android:textColor="#00E676"
+                                    android:fontFamily="sans-serif-black"
+                                    android:includeFontPadding="false"
+                                    android:shadowColor="#99000000"
+                                    android:shadowRadius="6" />
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="12dp"
+                                android:orientation="vertical">
+
+                                <TextClock
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:format12Hour="EEEE"
+                                    android:format24Hour="EEEE"
+                                    android:textSize="10.5sp"
+                                    android:textStyle="bold"
+                                    android:textColor="@android:color/white"
+                                    android:shadowColor="#80000000"
+                                    android:shadowRadius="4" />
+
+                                <TextClock
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="1dp"
+                                    android:format12Hour="d MMMM"
+                                    android:format24Hour="d MMMM"
+                                    android:textSize="8.5sp"
+                                    android:textColor="#CCFFFFFF"
+                                    android:shadowColor="#80000000"
+                                    android:shadowRadius="4" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="4dp"
+                                    android:background="@drawable/rounded_layout"
+                                    android:paddingHorizontal="6dp"
+                                    android:paddingVertical="1dp"
+                                    android:text="100%"
+                                    android:textSize="8sp"
+                                    android:textStyle="bold"
+                                    android:textColor="@android:color/white" />
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <!-- Style 4 Preview (Modern Pill) -->
+                        <LinearLayout
+                            android:id="@+id/preview_clock_s4"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center"
+                            android:gravity="center"
+                            android:visibility="gone"
+                            android:orientation="vertical">
+
+                            <TextClock
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:format12Hour="EEEE • d MMM"
+                                android:format24Hour="EEEE • d MMM"
+                                android:textSize="8.5sp"
+                                android:textStyle="bold"
+                                android:textColor="#00E676"
+                                android:shadowColor="#80000000"
+                                android:shadowRadius="4" />
+
+                            <LinearLayout
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:background="@drawable/rounded_layout_themed"
+                                android:paddingHorizontal="14dp"
+                                android:paddingVertical="2dp">
+
+                                <TextClock
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:format12Hour="hh:mm"
+                                    android:format24Hour="HH:mm"
+                                    android:textSize="26sp"
+                                    android:textStyle="bold"
+                                    android:textColor="@android:color/white"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:includeFontPadding="false" />
+                            </LinearLayout>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="3dp"
+                                android:text="Baterai 100%"
+                                android:textSize="8sp"
+                                android:textColor="#CCFFFFFF"
+                                android:shadowColor="#80000000"
+                                android:shadowRadius="4" />
                         </LinearLayout>
 
                         <!-- Cover screen badge tag -->

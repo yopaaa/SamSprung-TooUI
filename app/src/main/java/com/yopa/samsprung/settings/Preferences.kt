@@ -58,4 +58,11 @@ object Preferences {
 
     // Cover Screen Voice Input
     const val prefFloatingVoice: String = "pref_floating_voice"
+
+    // Cover Screen Clock Style
+    const val prefClockStyle: String = "pref_clock_style"
+    const val CLOCK_STYLE_1: Int = 1 // Style 1: Classic Centered (Default)
+    const val CLOCK_STYLE_2: Int = 2 // Style 2: Minimalist Left-Aligned
+    const val CLOCK_STYLE_3: Int = 3 // Style 3: Stacked Vertical
+    const val CLOCK_STYLE_4: Int = 4 // Style 4: Modern Compact Pill
 }

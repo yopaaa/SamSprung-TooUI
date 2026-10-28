@@ -18,6 +18,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.SharedPreferences
 import android.os.BatteryManager
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -26,10 +27,29 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import com.yopa.samsprung.R
+import com.yopa.samsprung.settings.Preferences
 
 class ClockHomeFragment : Fragment() {
 
-    private var batteryText: TextView? = null
+    private var style1Container: View? = null
+    private var style2Container: View? = null
+    private var style3Container: View? = null
+    private var style4Container: View? = null
+
+    private var batteryText1: TextView? = null
+    private var batteryText2: TextView? = null
+    private var batteryText3: TextView? = null
+    private var batteryText4: TextView? = null
+
+    private val prefs: SharedPreferences by lazy {
+        requireContext().getSharedPreferences(Preferences.prefsValue, Context.MODE_PRIVATE)
+    }
+
+    private val prefListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (key == Preferences.prefClockStyle) {
+            applyClockStyle()
+        }
+    }
 
     private val batteryReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -43,7 +63,11 @@ class ClockHomeFragment : Fragment() {
                 if (level >= 0 && scale > 0) {
                     val batteryPct = (level * 100 / scale.toFloat()).toInt()
                     val prefix = if (isCharging) "⚡ " else ""
-                    batteryText?.text = "$prefix$batteryPct%"
+                    val text = "$prefix$batteryPct%"
+                    batteryText1?.text = text
+                    batteryText2?.text = text
+                    batteryText3?.text = text
+                    batteryText4?.text = "Baterai $text"
                 }
             }
         }
@@ -58,22 +82,44 @@ class ClockHomeFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        batteryText = view.findViewById(R.id.home_battery_text)
+
+        style1Container = view.findViewById(R.id.clock_container_style1)
+        style2Container = view.findViewById(R.id.clock_container_style2)
+        style3Container = view.findViewById(R.id.clock_container_style3)
+        style4Container = view.findViewById(R.id.clock_container_style4)
+
+        batteryText1 = view.findViewById(R.id.home_battery_text)
+        batteryText2 = view.findViewById(R.id.home_battery_s2)
+        batteryText3 = view.findViewById(R.id.home_battery_s3)
+        batteryText4 = view.findViewById(R.id.home_battery_s4)
+
+        applyClockStyle()
+    }
+
+    private fun applyClockStyle() {
+        val style = prefs.getInt(Preferences.prefClockStyle, Preferences.CLOCK_STYLE_1)
+        style1Container?.visibility = if (style == Preferences.CLOCK_STYLE_1) View.VISIBLE else View.GONE
+        style2Container?.visibility = if (style == Preferences.CLOCK_STYLE_2) View.VISIBLE else View.GONE
+        style3Container?.visibility = if (style == Preferences.CLOCK_STYLE_3) View.VISIBLE else View.GONE
+        style4Container?.visibility = if (style == Preferences.CLOCK_STYLE_4) View.VISIBLE else View.GONE
     }
 
     override fun onResume() {
         super.onResume()
         try {
+            prefs.registerOnSharedPreferenceChangeListener(prefListener)
             requireContext().registerReceiver(
                 batteryReceiver,
                 IntentFilter(Intent.ACTION_BATTERY_CHANGED)
             )
         } catch (_: Exception) {}
+        applyClockStyle()
     }
 
     override fun onPause() {
         super.onPause()
         try {
+            prefs.unregisterOnSharedPreferenceChangeListener(prefListener)
             requireContext().unregisterReceiver(batteryReceiver)
         } catch (_: Exception) {}
     }
