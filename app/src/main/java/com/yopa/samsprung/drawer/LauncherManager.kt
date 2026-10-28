@@ -141,4 +141,41 @@ class LauncherManager(private val overlay: SamSprungOverlay) {
             }
         })
     }
+
+    fun launchIntent(intent: Intent, targetPackage: String? = null, targetActivity: String? = null) {
+        overlay.setKeyguardListener(object: SamSprungOverlay.KeyguardListener {
+            override fun onKeyguardCheck(unlocked: Boolean) {
+                if (!unlocked) return
+                overlay.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
+                overlay.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_BEHIND
+
+                intent.addFlags(
+                    Intent.FLAG_ACTIVITY_NEW_TASK or
+                    Intent.FLAG_ACTIVITY_TASK_ON_HOME or
+                    Intent.FLAG_ACTIVITY_FORWARD_RESULT
+                )
+
+                val options = CoverOptions(null).getAnimatedOptions(
+                    1, overlay.getCoordinator(), intent
+                ).toBundle()
+
+                try {
+                    overlay.startActivity(intent, options)
+                } catch (e: Exception) {
+                    try {
+                        displayContext.startActivity(intent, options)
+                    } catch (_: Exception) {
+                        return
+                    }
+                }
+
+                val extras = Bundle()
+                val pkg = targetPackage ?: intent.component?.packageName ?: intent.`package` ?: "com.android.settings"
+                extras.putString("launchPackage", pkg)
+                val act = targetActivity ?: intent.component?.className
+                act?.let { extras.putString("launchActivity", it) }
+                postOrientationHandler(extras)
+            }
+        })
+    }
 }

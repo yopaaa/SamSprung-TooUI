@@ -45,6 +45,7 @@ import android.nfc.NfcManager
 import android.os.*
 import android.provider.Settings
 import android.speech.SpeechRecognizer
+import android.telephony.TelephonyManager
 import android.util.TypedValue
 import android.view.*
 import android.view.GestureDetector.SimpleOnGestureListener
@@ -61,18 +62,24 @@ import androidx.appcompat.widget.Toolbar
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.content.ContextCompat
 import androidx.core.view.*
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import androidx.window.java.layout.WindowInfoTrackerCallbackAdapter
 import androidx.window.layout.WindowInfoTracker
+import com.yopa.app.CoverOptions
 import com.yopa.content.ScaledContext
 import com.yopa.io.Debug
 import com.yopa.material.IconifiedSnackbar
 import com.yopa.os.Version
+import com.yopa.samsprung.drawer.CoverQuickTilesAdapter
 import com.yopa.samsprung.drawer.CoverStateAdapter
 import com.yopa.samsprung.drawer.LauncherManager
 import com.yopa.samsprung.drawer.PanelWidgetManager
+import com.yopa.samsprung.drawer.QuickTileData
+import com.yopa.samsprung.drawer.QuickTileRegistry
+import com.yopa.samsprung.drawer.TileUIState
 import com.yopa.samsprung.drawer.panels.*
 import com.yopa.samsprung.settings.Preferences
 import com.yopa.samsprung.speech.VoiceRecognizer
@@ -152,6 +159,7 @@ class SamSprungOverlay : AppCompatActivity() {
     private lateinit var viewPager: ViewPager2
     private var pagerAdapter: FragmentStateAdapter = CoverStateAdapter(this)
     private var edgeGestureManager: EdgeBackGestureManager? = null
+    private var coverQuickTilesAdapter: CoverQuickTilesAdapter? = null
 
     private val vibrator: Vibrator by lazy {
         if (Version.isSnowCone)
@@ -366,101 +374,16 @@ class SamSprungOverlay : AppCompatActivity() {
 
         val keyguardManager = (getSystemService(KEYGUARD_SERVICE) as KeyguardManager)
 
-        // Setup 2-Row Quick Tiles
-        findViewById<View>(R.id.tile_wifi)?.setOnClickListener {
-            if (prefs.getBoolean(Preferences.prefReacts, true)) vibrator.vibrate(effectClick)
-            val buttonAuth = findViewById<View>(R.id.button_auth)
-            if (buttonAuth == null || buttonAuth.isInvisible || !keyguardManager.isDeviceLocked) {
-                wifiEnabler.launch(Intent(Settings.Panel.ACTION_INTERNET_CONNECTIVITY))
-            } else {
-                val authBar: Snackbar = IconifiedSnackbar(
-                    this@SamSprungOverlay, coordinator
-                ).buildTickerBar(
-                    getString(R.string.auth_required),
-                    R.drawable.ic_fingerprint_24dp
-                )
-                authBar.setAction(R.string.auth_required_action) {
-                    onKeyguardClicked(keyguardManager, findViewById(R.id.button_auth))
-                }
-                authBar.show()
-            }
-        }
-
-        findViewById<View>(R.id.tile_bluetooth)?.setOnClickListener {
-            if (prefs.getBoolean(Preferences.prefReacts, true)) vibrator.vibrate(effectClick)
-            @Suppress("deprecation")
-            if (bluetoothAdapter.isEnabled) {
-                bluetoothAdapter.disable()
-            } else {
-                bluetoothAdapter.enable()
-            }
-            updateQuickTilesState()
-        }
-
-        findViewById<View>(R.id.tile_sound)?.setOnClickListener {
-            if (prefs.getBoolean(Preferences.prefReacts, true)) vibrator.vibrate(effectClick)
-            if (audioManager.ringerMode == AudioManager.RINGER_MODE_NORMAL) {
-                audioManager.ringerMode = AudioManager.RINGER_MODE_SILENT
-            } else {
-                audioManager.ringerMode = AudioManager.RINGER_MODE_NORMAL
-            }
-            updateQuickTilesState()
-        }
-
-        findViewById<View>(R.id.button_rotation)?.setOnClickListener {
-            if (prefs.getBoolean(Preferences.prefReacts, true)) vibrator.vibrate(effectClick)
-            val unlocked = !prefs.getBoolean(Preferences.prefRotate, false)
-            with(prefs.edit()) {
-                putBoolean(Preferences.prefRotate, unlocked)
-                apply()
-            }
-            updateQuickTilesState()
-        }
-
-        findViewById<View>(R.id.tile_torch)?.setOnClickListener {
-            if (prefs.getBoolean(Preferences.prefReacts, true)) vibrator.vibrate(effectClick)
-            try {
-                camManager.setTorchMode(camManager.cameraIdList[0], !isTorchEnabled)
-            } catch (_: Exception) {}
-        }
-
-        findViewById<View>(R.id.tile_dnd)?.setOnClickListener {
-            if (prefs.getBoolean(Preferences.prefReacts, true)) vibrator.vibrate(effectClick)
-            if (notificationManager.currentInterruptionFilter == NotificationManager.INTERRUPTION_FILTER_ALL) {
-                notificationManager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_NONE)
-            } else {
-                notificationManager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALL)
-            }
-            updateQuickTilesState()
-        }
-
-        findViewById<View>(R.id.tile_nfc)?.setOnClickListener {
-            if (prefs.getBoolean(Preferences.prefReacts, true)) vibrator.vibrate(effectClick)
-            val buttonAuth = findViewById<View>(R.id.button_auth)
-            if (buttonAuth == null || buttonAuth.isInvisible || !keyguardManager.isDeviceLocked) {
-                nfcEnabler.launch(Intent(Settings.Panel.ACTION_NFC))
-            } else {
-                val authBar: Snackbar = IconifiedSnackbar(
-                    this@SamSprungOverlay, coordinator
-                ).buildTickerBar(
-                    getString(R.string.auth_required),
-                    R.drawable.ic_fingerprint_24dp
-                )
-                authBar.setAction(R.string.auth_required_action) {
-                    onKeyguardClicked(keyguardManager, findViewById(R.id.button_auth))
-                }
-                authBar.show()
-            }
-        }
-
-        findViewById<View>(R.id.button_auth)?.setOnClickListener {
-            if (prefs.getBoolean(Preferences.prefReacts, true)) vibrator.vibrate(effectClick)
-            val keyguardManager = getSystemService(KEYGUARD_SERVICE) as KeyguardManager
-            if (keyguardManager.isDeviceLocked) {
-                onKeyguardClicked(keyguardManager, findViewById(R.id.button_auth))
-            } else {
-                screenOff()
-            }
+        // Setup Dynamic 2-Row Horizontal Scrollable Quick Tiles
+        val rvQuickTiles = findViewById<RecyclerView>(R.id.rv_quick_tiles)
+        rvQuickTiles?.let { rv ->
+            rv.layoutManager = GridLayoutManager(this, 2, GridLayoutManager.HORIZONTAL, false)
+            coverQuickTilesAdapter = CoverQuickTilesAdapter(
+                tiles = getActiveQuickTiles(),
+                stateProvider = { tileId -> getTileUIState(tileId) },
+                onTileClick = { tile -> handleQuickTileClick(tile) }
+            )
+            rv.adapter = coverQuickTilesAdapter
         }
 
         findViewById<View>(R.id.button_close)?.setOnClickListener {
@@ -622,102 +545,213 @@ class SamSprungOverlay : AppCompatActivity() {
         updateQuickTilesState()
     }
 
-    private fun updateQuickTilesState() {
-        val activeBg = R.drawable.quick_tile_bg_active
-        val inactiveBg = R.drawable.quick_tile_bg
-
-        val showWifi = prefs.getBoolean(Preferences.prefQuickWifi, true)
-        val showBt = prefs.getBoolean(Preferences.prefQuickBluetooth, true)
-        val showSound = prefs.getBoolean(Preferences.prefQuickSound, true)
-        val showRotation = prefs.getBoolean(Preferences.prefQuickRotation, true)
-
-        val showTorch = prefs.getBoolean(Preferences.prefQuickTorch, true)
-        val showDnd = prefs.getBoolean(Preferences.prefQuickDnd, true)
-        val showNfc = prefs.getBoolean(Preferences.prefQuickNfc, true)
-        val showAuth = prefs.getBoolean(Preferences.prefQuickAuth, true)
-
-        // Row 1 Visibility
-        val row1 = findViewById<View>(R.id.quick_tiles_row_1)
-        row1?.visibility = if (showWifi || showBt || showSound || showRotation) View.VISIBLE else View.GONE
-
-        // Row 2 Visibility
-        val row2 = findViewById<View>(R.id.quick_tiles_row_2)
-        row2?.visibility = if (showTorch || showDnd || showNfc || showAuth) View.VISIBLE else View.GONE
-
-        // Wi-Fi
-        val tileWifi = findViewById<View>(R.id.tile_wifi)
-        tileWifi?.visibility = if (showWifi) View.VISIBLE else View.GONE
-        val iconWifi = findViewById<AppCompatImageView>(R.id.icon_wifi)
-        val isWifiOn = wifiManager.isWifiEnabled
-        tileWifi?.setBackgroundResource(if (isWifiOn) activeBg else inactiveBg)
-        iconWifi?.setImageResource(if (isWifiOn) R.drawable.ic_wifi_on_24dp else R.drawable.ic_wifi_off_24dp)
-
-        // Bluetooth
-        val tileBt = findViewById<View>(R.id.tile_bluetooth)
-        tileBt?.visibility = if (showBt) View.VISIBLE else View.GONE
-        val iconBt = findViewById<AppCompatImageView>(R.id.icon_bluetooth)
-        val isBtOn = try { bluetoothAdapter.isEnabled } catch (_: Exception) { false }
-        tileBt?.setBackgroundResource(if (isBtOn) activeBg else inactiveBg)
-        iconBt?.setImageResource(if (isBtOn) R.drawable.ic_bluetooth_on_24dp else R.drawable.ic_bluetooth_off_24dp)
-
-        // Sound
-        val tileSound = findViewById<View>(R.id.tile_sound)
-        tileSound?.visibility = if (showSound) View.VISIBLE else View.GONE
-        val iconSound = findViewById<AppCompatImageView>(R.id.icon_sound)
-        val textSound = findViewById<TextView>(R.id.text_sound)
-        val isSoundNormal = (audioManager.ringerMode == AudioManager.RINGER_MODE_NORMAL)
-        tileSound?.setBackgroundResource(if (isSoundNormal) activeBg else inactiveBg)
-        iconSound?.setImageResource(if (isSoundNormal) R.drawable.ic_sound_on_24dp else R.drawable.ic_sound_off_24dp)
-        textSound?.text = if (isSoundNormal) "Suara" else "Hening"
-
-        // Rotation
-        val tileRotation = findViewById<View>(R.id.button_rotation)
-        tileRotation?.visibility = if (showRotation) View.VISIBLE else View.GONE
-        val iconRotation = findViewById<AppCompatImageView>(R.id.icon_rotation)
-        val textRotation = findViewById<TextView>(R.id.text_rotation)
-        val isRotationLocked = prefs.getBoolean(Preferences.prefRotate, false)
-        tileRotation?.setBackgroundResource(if (isRotationLocked) activeBg else inactiveBg)
-        iconRotation?.setImageResource(if (isRotationLocked) R.drawable.ic_screen_lock_rotation_24 else R.drawable.ic_screen_rotation_24)
-        textRotation?.text = if (isRotationLocked) "Terkunci" else "Rotasi"
-
-        // Torch
-        val tileTorch = findViewById<View>(R.id.tile_torch)
-        tileTorch?.visibility = if (showTorch) View.VISIBLE else View.GONE
-        val iconTorch = findViewById<AppCompatImageView>(R.id.icon_torch)
-        tileTorch?.setBackgroundResource(if (isTorchEnabled) activeBg else inactiveBg)
-        iconTorch?.setImageResource(if (isTorchEnabled) R.drawable.ic_flashlight_on_24dp else R.drawable.ic_flashlight_off_24dp)
-
-        // DND
-        val tileDnd = findViewById<View>(R.id.tile_dnd)
-        tileDnd?.visibility = if (showDnd) View.VISIBLE else View.GONE
-        val iconDnd = findViewById<AppCompatImageView>(R.id.icon_dnd)
-        val isDndOn = (notificationManager.currentInterruptionFilter != NotificationManager.INTERRUPTION_FILTER_ALL)
-        tileDnd?.setBackgroundResource(if (isDndOn) activeBg else inactiveBg)
-        iconDnd?.setImageResource(if (isDndOn) R.drawable.ic_do_not_disturb_on_24dp else R.drawable.ic_do_not_disturb_off_24dp)
-
-        // NFC
-        val tileNfc = findViewById<View>(R.id.tile_nfc)
-        tileNfc?.visibility = if (showNfc) View.VISIBLE else View.GONE
-        val iconNfc = findViewById<AppCompatImageView>(R.id.icon_nfc)
-        val isNfcOn = try { nfcAdapter?.isEnabled == true } catch (_: Exception) { false }
-        tileNfc?.setBackgroundResource(if (isNfcOn) activeBg else inactiveBg)
-        iconNfc?.setImageResource(if (isNfcOn) R.drawable.ic_nfc_on_24dp else R.drawable.ic_nfc_off_24dp)
-
-        // Auth / Lock Tile
-        val buttonAuth = findViewById<View>(R.id.button_auth)
-        buttonAuth?.visibility = if (showAuth) View.VISIBLE else View.GONE
-        val iconAuth = findViewById<AppCompatImageView>(R.id.icon_auth)
-        val textAuth = findViewById<TextView>(R.id.text_auth)
-        val keyguardManager = getSystemService(KEYGUARD_SERVICE) as KeyguardManager
-        if (keyguardManager.isDeviceLocked) {
-            buttonAuth?.setBackgroundResource(activeBg)
-            iconAuth?.setImageResource(R.drawable.ic_fingerprint_24dp)
-            textAuth?.text = "Buka"
-        } else {
-            buttonAuth?.setBackgroundResource(inactiveBg)
-            iconAuth?.setImageResource(R.drawable.ic_fingerprint_24dp)
-            textAuth?.text = "Kunci"
+    private fun getActiveQuickTiles(): List<QuickTileData> {
+        val order = prefs.getString(Preferences.prefQuickTilesOrder, Preferences.DEFAULT_QUICK_TILES_ORDER)
+        val allOrdered = QuickTileRegistry.getOrderedTiles(order)
+        return allOrdered.filter { tile ->
+            prefs.getBoolean(tile.prefKey, true)
         }
+    }
+
+    private fun getTileUIState(tileId: String): TileUIState {
+        return when (tileId) {
+            "wifi" -> {
+                val isWifiOn = wifiManager.isWifiEnabled
+                TileUIState(
+                    isActive = isWifiOn,
+                    iconRes = if (isWifiOn) R.drawable.ic_wifi_on_24dp else R.drawable.ic_wifi_off_24dp,
+                    label = "Wi-Fi"
+                )
+            }
+            "bluetooth" -> {
+                val isBtOn = try { bluetoothAdapter.isEnabled } catch (_: Exception) { false }
+                TileUIState(
+                    isActive = isBtOn,
+                    iconRes = if (isBtOn) R.drawable.ic_bluetooth_on_24dp else R.drawable.ic_bluetooth_off_24dp,
+                    label = "Bluetooth"
+                )
+            }
+            "mobile_data" -> {
+                val isDataOn = Settings.Global.getInt(contentResolver, "mobile_data", 0) != 0
+                TileUIState(
+                    isActive = isDataOn,
+                    iconRes = R.drawable.ic_mobile_data_24dp,
+                    label = "Data"
+                )
+            }
+            "sound" -> {
+                val isSoundNormal = (audioManager.ringerMode == AudioManager.RINGER_MODE_NORMAL)
+                TileUIState(
+                    isActive = isSoundNormal,
+                    iconRes = if (isSoundNormal) R.drawable.ic_sound_on_24dp else R.drawable.ic_sound_off_24dp,
+                    label = if (isSoundNormal) "Suara" else "Hening"
+                )
+            }
+            "rotation" -> {
+                val isRotationLocked = prefs.getBoolean(Preferences.prefRotate, false)
+                TileUIState(
+                    isActive = isRotationLocked,
+                    iconRes = if (isRotationLocked) R.drawable.ic_screen_lock_rotation_24 else R.drawable.ic_screen_rotation_24,
+                    label = if (isRotationLocked) "Terkunci" else "Rotasi"
+                )
+            }
+            "torch" -> {
+                TileUIState(
+                    isActive = isTorchEnabled,
+                    iconRes = if (isTorchEnabled) R.drawable.ic_flashlight_on_24dp else R.drawable.ic_flashlight_off_24dp,
+                    label = "Senter"
+                )
+            }
+            "airplane" -> {
+                val isAirplaneOn = Settings.Global.getInt(contentResolver, Settings.Global.AIRPLANE_MODE_ON, 0) != 0
+                TileUIState(
+                    isActive = isAirplaneOn,
+                    iconRes = R.drawable.ic_airplanemode_24dp,
+                    label = "Pesawat"
+                )
+            }
+            "hotspot" -> {
+                val isHotspotOn = try {
+                    val method = wifiManager.javaClass.getDeclaredMethod("isWifiApEnabled")
+                    method.invoke(wifiManager) as? Boolean ?: false
+                } catch (_: Exception) {
+                    false
+                }
+                TileUIState(
+                    isActive = isHotspotOn,
+                    iconRes = R.drawable.ic_wifi_tethering_24dp,
+                    label = "Hotspot"
+                )
+            }
+            "dnd" -> {
+                val isDndOn = (notificationManager.currentInterruptionFilter != NotificationManager.INTERRUPTION_FILTER_ALL)
+                TileUIState(
+                    isActive = isDndOn,
+                    iconRes = if (isDndOn) R.drawable.ic_do_not_disturb_on_24dp else R.drawable.ic_do_not_disturb_off_24dp,
+                    label = "DND"
+                )
+            }
+            "nfc" -> {
+                val isNfcOn = try { nfcAdapter?.isEnabled == true } catch (_: Exception) { false }
+                TileUIState(
+                    isActive = isNfcOn,
+                    iconRes = if (isNfcOn) R.drawable.ic_nfc_on_24dp else R.drawable.ic_nfc_off_24dp,
+                    label = "NFC"
+                )
+            }
+            "device_care" -> {
+                TileUIState(
+                    isActive = false,
+                    iconRes = R.drawable.ic_device_care_24dp,
+                    label = "Perawatan"
+                )
+            }
+            "auth" -> {
+                val keyguardManager = getSystemService(KEYGUARD_SERVICE) as KeyguardManager
+                val isLocked = keyguardManager.isDeviceLocked
+                TileUIState(
+                    isActive = isLocked,
+                    iconRes = R.drawable.ic_fingerprint_24dp,
+                    label = if (isLocked) "Buka" else "Kunci"
+                )
+            }
+            else -> {
+                TileUIState(
+                    isActive = false,
+                    iconRes = R.drawable.ic_samsprung_24dp,
+                    label = tileId
+                )
+            }
+        }
+    }
+
+    private fun handleQuickTileClick(tile: QuickTileData) {
+        if (prefs.getBoolean(Preferences.prefReacts, true)) {
+            vibrator.vibrate(effectClick)
+        }
+
+        when (tile.id) {
+            "wifi" -> {
+                val intent = Intent(Settings.ACTION_WIFI_SETTINGS)
+                launcherManager?.launchIntent(intent, "com.android.settings")
+            }
+            "bluetooth" -> {
+                @Suppress("deprecation")
+                if (bluetoothAdapter.isEnabled) {
+                    bluetoothAdapter.disable()
+                } else {
+                    bluetoothAdapter.enable()
+                }
+                updateQuickTilesState()
+            }
+            "mobile_data" -> {
+                val intent = Intent().apply {
+                    component = ComponentName("com.android.settings", "com.android.settings.Settings\$DataUsageSummaryActivity")
+                }
+                launcherManager?.launchIntent(intent, "com.android.settings", "com.android.settings.Settings\$DataUsageSummaryActivity")
+            }
+            "sound" -> {
+                if (audioManager.ringerMode == AudioManager.RINGER_MODE_NORMAL) {
+                    audioManager.ringerMode = AudioManager.RINGER_MODE_SILENT
+                } else {
+                    audioManager.ringerMode = AudioManager.RINGER_MODE_NORMAL
+                }
+                updateQuickTilesState()
+            }
+            "rotation" -> {
+                val unlocked = !prefs.getBoolean(Preferences.prefRotate, false)
+                with(prefs.edit()) {
+                    putBoolean(Preferences.prefRotate, unlocked)
+                    apply()
+                }
+                updateQuickTilesState()
+            }
+            "torch" -> {
+                try {
+                    camManager.setTorchMode(camManager.cameraIdList[0], !isTorchEnabled)
+                } catch (_: Exception) {}
+            }
+            "airplane" -> {
+                val intent = Intent(Settings.ACTION_AIRPLANE_MODE_SETTINGS)
+                launcherManager?.launchIntent(intent, "com.android.settings")
+            }
+            "hotspot" -> {
+                val intent = Intent().apply {
+                    component = ComponentName("com.android.settings", "com.android.settings.Settings\$WifiApSettingsActivity")
+                }
+                launcherManager?.launchIntent(intent, "com.android.settings", "com.android.settings.Settings\$WifiApSettingsActivity")
+            }
+            "dnd" -> {
+                if (notificationManager.currentInterruptionFilter == NotificationManager.INTERRUPTION_FILTER_ALL) {
+                    notificationManager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_NONE)
+                } else {
+                    notificationManager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALL)
+                }
+                updateQuickTilesState()
+            }
+            "nfc" -> {
+                val intent = Intent(Settings.ACTION_NFC_SETTINGS)
+                launcherManager?.launchIntent(intent, "com.android.settings")
+            }
+            "device_care" -> {
+                val intent = Intent(Intent.ACTION_MAIN).apply {
+                    component = ComponentName("com.samsung.android.lool", "com.samsung.android.sm.score.ui.ScoreBoardActivity")
+                }
+                launcherManager?.launchIntent(intent, "com.samsung.android.lool", "com.samsung.android.sm.score.ui.ScoreBoardActivity")
+            }
+            "auth" -> {
+                val keyguardManager = getSystemService(KEYGUARD_SERVICE) as KeyguardManager
+                if (keyguardManager.isDeviceLocked) {
+                    onKeyguardClicked(keyguardManager, null)
+                } else {
+                    screenOff()
+                }
+            }
+        }
+    }
+
+    private fun updateQuickTilesState() {
+        coverQuickTilesAdapter?.updateTiles(getActiveQuickTiles())
     }
 
     private fun setBottomTheme(bottomHandle: View, menuButton: FloatingActionButton) {
@@ -1306,6 +1340,7 @@ class SamSprungOverlay : AppCompatActivity() {
             controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
             controller.hide(WindowInsetsCompat.Type.systemBars())
         }
+        updateQuickTilesState()
     }
 
     override fun onStop() {
