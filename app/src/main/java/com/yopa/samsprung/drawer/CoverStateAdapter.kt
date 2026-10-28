@@ -20,44 +20,45 @@ import androidx.viewpager2.adapter.FragmentStateAdapter
 
 class CoverStateAdapter(fragmentActivity: AppCompatActivity) : FragmentStateAdapter(fragmentActivity) {
     private val mFragments: ArrayList<PanelViewFragment> = arrayListOf()
-    private val mFragmentIDs: ArrayList<Int> = arrayListOf()
-    private val noticeList = NotificationFragment()
-    private val clockHome = ClockHomeFragment()
-    private val appDrawer = AppDrawerFragment()
+    private val mFragmentIDs: ArrayList<Long> = arrayListOf()
+    private var nextUniqueId: Long = 3L
 
     fun addFragment() : Int {
         val fragment = PanelViewFragment()
-        val position = mFragmentIDs.size + 3
+        val newId = nextUniqueId++
         mFragments.add(fragment)
+        mFragmentIDs.add(newId)
+        val position = mFragmentIDs.size + 2
         notifyItemInserted(position)
-        mFragmentIDs.add(position)
         return position
     }
 
-    fun removeFragment(fragmentID: Int) {
-        val position = fragmentID - 3
-        mFragments.removeAt(position)
-        mFragmentIDs.removeAt(position)
-        mFragments.trimToSize()
-        mFragmentIDs.trimToSize()
-        notifyItemRemoved(fragmentID)
+    fun removeFragment(position: Int) {
+        val internalIndex = position - 3
+        if (internalIndex in 0 until mFragments.size) {
+            mFragments.removeAt(internalIndex)
+            mFragmentIDs.removeAt(internalIndex)
+            mFragments.trimToSize()
+            mFragmentIDs.trimToSize()
+            notifyItemRemoved(position)
+        }
     }
 
-    fun getFragment(fragmentID: Int) : PanelViewFragment {
-        return mFragments[fragmentID - 3]
+    fun getFragment(position: Int) : PanelViewFragment {
+        return mFragments[position - 3]
     }
 
     override fun createFragment(position: Int): Fragment {
         return when (position) {
-            0 -> noticeList
-            1 -> clockHome
-            2 -> appDrawer
+            0 -> NotificationFragment()
+            1 -> ClockHomeFragment()
+            2 -> AppDrawerFragment()
             else -> mFragments[position - 3]
         }
     }
 
     override fun getItemId(position: Int): Long {
-        return if (position < 3) position.toLong() else mFragmentIDs[position - 3].toLong()
+        return if (position < 3) position.toLong() else mFragmentIDs[position - 3]
     }
 
     override fun getItemCount(): Int {
@@ -65,6 +66,7 @@ class CoverStateAdapter(fragmentActivity: AppCompatActivity) : FragmentStateAdap
     }
 
     override fun containsItem(itemId: Long): Boolean {
-        return mFragmentIDs.contains(itemId.toInt())
+        if (itemId in 0L..2L) return true
+        return mFragmentIDs.contains(itemId)
     }
 }

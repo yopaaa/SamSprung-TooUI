@@ -43,8 +43,8 @@ object QuickTileRegistry {
         ),
         "rotation" to QuickTileData(
             id = "rotation",
-            title = "Kunci Rotasi Layar",
-            description = "Pintasan mengunci atau mengizinkan rotasi cover",
+            title = "Orientasi Cover (Portrait / Landscape)",
+            description = "Beralih tampilan cover antara Portrait (tegak) dan Landscape (mendatar)",
             iconRes = R.drawable.ic_screen_rotation_24,
             prefKey = Preferences.prefQuickRotation
         ),

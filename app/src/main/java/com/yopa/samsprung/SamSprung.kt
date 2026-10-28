@@ -63,7 +63,7 @@ class SamSprung : Application() {
             val exception = StringWriter()
             error.printStackTrace(PrintWriter(exception))
             try {
-                OrientationManager(this).removeOrientationLayout()
+                OrientationManager.removeOrientationLayout(this)
             } catch (_: Exception) { }
             try {
                 Debug(this).processException(

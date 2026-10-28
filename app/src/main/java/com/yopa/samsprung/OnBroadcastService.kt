@@ -41,7 +41,7 @@ class OnBroadcastService : Service() {
                 || Intent.ACTION_SCREEN_ON == intent.action) {
                 if (getSharedPreferences(Preferences.prefsValue, MODE_PRIVATE)
                         .getBoolean(Preferences.prefRotate, false)) {
-                    OrientationManager(context).removeOrientationLayout()
+                    OrientationManager.removeOrientationLayout(context)
                 }
                 ScaledContext(context).cover().startActivity(
                     Intent(context.applicationContext, SamSprungOverlay::class.java)

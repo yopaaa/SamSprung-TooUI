@@ -31,20 +31,20 @@ class LauncherManager(private val overlay: SamSprungOverlay) {
         Preferences.prefsValue, AppCompatActivity.MODE_PRIVATE)
 
     private fun postOrientationHandler(extras: Bundle) {
-        val isOppoDevice = Debug.isOppoDevice
-        val orientationLock = OrientationManager(overlay)
-        if (isOppoDevice) {
-            if (prefs.getBoolean(Preferences.prefRotate, false))
-                orientationLock.addOrientationLayout(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE)
-        } else {
-            orientationLock.addOrientationLayout(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
+        val mode = prefs.getString(Preferences.prefAppOrientationMode, null)
+        val lockPortrait = when (mode) {
+            Preferences.ORIENTATION_MODE_PORTRAIT -> true
+            Preferences.ORIENTATION_MODE_AUTO -> false
+            else -> prefs.getBoolean(Preferences.prefRotate, false)
         }
+
+        if (lockPortrait) {
+            OrientationManager.addOrientationLayout(overlay, ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
+        } else {
+            OrientationManager.removeOrientationLayout(overlay)
+        }
+
         Handler(Looper.getMainLooper()).postDelayed({
-            // All apps are launched in portrait to prevent crashes related to orientation
-            if (!prefs.getBoolean(Preferences.prefRotate, false)) {
-                if (!isOppoDevice) orientationLock.removeOrientationLayout()
-                overlay.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-            }
             overlay.onStopOverlay()
             val context = ScaledContext(ScaledContext(overlay).internal(1.5f)).cover()
             context.startForegroundService(
@@ -66,17 +66,31 @@ class LauncherManager(private val overlay: SamSprungOverlay) {
 
                 val intent = overlay.packageManager
                     .getLaunchIntentForPackage(resolveInfo.activityInfo.packageName)
-                launcher.startMainActivity(
-                    ComponentName(
-                        resolveInfo.activityInfo.packageName,
-                        resolveInfo.activityInfo.name
-                    ),
-                    Process.myUserHandle(),
-                    getLaunchBounds(),
-                    CoverOptions(null).getAnimatedOptions(
-                        1, overlay.getCoordinator(), intent
-                    ).toBundle()
+                val targetComponent = ComponentName(
+                    resolveInfo.activityInfo.packageName,
+                    resolveInfo.activityInfo.name
                 )
+                try {
+                    launcher.startMainActivity(
+                        targetComponent,
+                        Process.myUserHandle(),
+                        getLaunchBounds(),
+                        CoverOptions(null).getAnimatedOptions(
+                            1, overlay.getCoordinator(), intent
+                        ).toBundle()
+                    )
+                } catch (_: Exception) {
+                    try {
+                        val fallbackIntent = (intent ?: Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)).apply {
+                            component = targetComponent
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or
+                                    Intent.FLAG_ACTIVITY_TASK_ON_HOME or
+                                    Intent.FLAG_ACTIVITY_FORWARD_RESULT)
+                        }
+                        val options = CoverOptions(null).getAnimatedOptions(1, overlay.getCoordinator(), fallbackIntent).toBundle()
+                        overlay.startActivity(fallbackIntent, options)
+                    } catch (_: Exception) {}
+                }
 
                 val extras = Bundle()
                 extras.putString("launchPackage", resolveInfo.activityInfo.packageName)
@@ -94,14 +108,24 @@ class LauncherManager(private val overlay: SamSprungOverlay) {
                 overlay.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_BEHIND
 
                 val intent = overlay.packageManager.getLaunchIntentForPackage(appInfo.packageName)
-                launcher.startMainActivity(
-                    intent?.component,
-                    Process.myUserHandle(),
-                    getLaunchBounds(),
-                    CoverOptions(null).getAnimatedOptions(
-                        1, overlay.getCoordinator(), intent
-                    ).toBundle()
-                )
+                try {
+                    launcher.startMainActivity(
+                        intent?.component,
+                        Process.myUserHandle(),
+                        getLaunchBounds(),
+                        CoverOptions(null).getAnimatedOptions(
+                            1, overlay.getCoordinator(), intent
+                        ).toBundle()
+                    )
+                } catch (_: Exception) {
+                    try {
+                        intent?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or
+                                Intent.FLAG_ACTIVITY_TASK_ON_HOME or
+                                Intent.FLAG_ACTIVITY_FORWARD_RESULT)
+                        val options = CoverOptions(null).getAnimatedOptions(1, overlay.getCoordinator(), intent).toBundle()
+                        intent?.let { overlay.startActivity(it, options) }
+                    } catch (_: Exception) {}
+                }
 
                 val extras = Bundle()
                 extras.putString("launchPackage", appInfo.packageName)

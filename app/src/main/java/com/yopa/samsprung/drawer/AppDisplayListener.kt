@@ -17,6 +17,7 @@ package com.yopa.samsprung.drawer
 import android.annotation.SuppressLint
 import android.app.*
 import android.content.*
+import android.content.pm.ActivityInfo
 import android.content.pm.LauncherApps
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -24,6 +25,7 @@ import android.graphics.Color
 import android.graphics.PixelFormat
 import android.hardware.display.DisplayManager
 import android.os.*
+import android.util.Log
 import android.view.*
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -85,10 +87,14 @@ class AppDisplayListener : Service() {
         offReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent) {
                 if (intent.action == Intent.ACTION_SCREEN_OFF) {
-                    componentName?.let {
-                        restoreActivityDisplay(it, 0)
-                    } ?: launchPackage?.let {
-                        restoreActivityDisplay(it, launchActivity, 0)
+                    try {
+                        componentName?.let {
+                            restoreActivityDisplay(it, 0)
+                        } ?: launchPackage?.let {
+                            restoreActivityDisplay(it, launchActivity, 0)
+                        }
+                    } catch (e: Exception) {
+                        Log.e("AppDisplayListener", "Error restoring on SCREEN_OFF", e)
                     }
                     componentName = null
                     launchPackage = null
@@ -110,10 +116,14 @@ class AppDisplayListener : Service() {
                 override fun onDisplayAdded(display: Int) {}
                 override fun onDisplayChanged(display: Int) {
                     if (display == 0 && getDisplay(0).state == Display.STATE_ON) {
-                        componentName?.let {
-                            restoreActivityDisplay(it, display)
-                        } ?: launchPackage?.let {
-                            restoreActivityDisplay(it, launchActivity, display)
+                        try {
+                            componentName?.let {
+                                restoreActivityDisplay(it, display)
+                            } ?: launchPackage?.let {
+                                restoreActivityDisplay(it, launchActivity, display)
+                            }
+                        } catch (e: Exception) {
+                            Log.e("AppDisplayListener", "Error restoring on display changed", e)
                         }
                         componentName = null
                         launchPackage = null
@@ -130,6 +140,13 @@ class AppDisplayListener : Service() {
 
         val displayContext = ScaledContext(ScaledContext(applicationContext).cover()).internal(1.5f)
         floatView = LayoutInflater.from(displayContext).inflate(R.layout.navigation_menu, null)
+        val mode = prefs.getString(Preferences.prefAppOrientationMode, null)
+        val shouldLockPortrait = when (mode) {
+            Preferences.ORIENTATION_MODE_PORTRAIT -> true
+            Preferences.ORIENTATION_MODE_AUTO -> false
+            else -> prefs.getBoolean(Preferences.prefRotate, false)
+        }
+
         val params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.WRAP_CONTENT,
@@ -138,6 +155,13 @@ class AppDisplayListener : Service() {
                     WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSLUCENT
         )
+        if (shouldLockPortrait) {
+            params.screenOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+            OrientationManager.addOrientationLayout(displayContext, ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
+        } else {
+            params.screenOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+            OrientationManager.removeOrientationLayout(displayContext)
+        }
         params.gravity = Gravity.BOTTOM
         floatView.keepScreenOn = true
 
@@ -191,10 +215,18 @@ class AppDisplayListener : Service() {
             }
         })
 
+        var lastBackTime = 0L
         with (displayContext.getSystemService(WINDOW_SERVICE) as WindowManager) {
             addView(floatView, params)
             edgeGestureManager?.detach()
-            edgeGestureManager = EdgeBackGestureManager(displayContext, this)
+            edgeGestureManager = EdgeBackGestureManager(displayContext, this) {
+                val now = System.currentTimeMillis()
+                val backPerformed = AccessibilityObserver.performBackAction()
+                if (now - lastBackTime < 1800 || !backPerformed) {
+                    returnToHome(componentName, launchPackage, launchActivity)
+                }
+                lastBackTime = now
+            }
             edgeGestureManager?.attach()
         }
         Handler(Looper.getMainLooper()).postDelayed({
@@ -204,38 +236,94 @@ class AppDisplayListener : Service() {
     }
 
     private fun restoreActivityDisplay(componentName: ComponentName?, display: Int) {
-        ScaledContext(applicationContext).restore(display).run {
-            with (getSystemService(LAUNCHER_APPS_SERVICE) as LauncherApps) {
-                startMainActivity(
-                    componentName,
-                    Process.myUserHandle(),
-                    with (getSystemService(WINDOW_SERVICE) as WindowManager) { maximumWindowMetrics.bounds },
-                    CoverOptions(null).getActivityOptions(display).toBundle()
-                )
+        if (componentName == null) return
+        try {
+            ScaledContext(applicationContext).restore(display).run {
+                with (getSystemService(LAUNCHER_APPS_SERVICE) as LauncherApps) {
+                    startMainActivity(
+                        componentName,
+                        Process.myUserHandle(),
+                        with (getSystemService(WINDOW_SERVICE) as WindowManager) { maximumWindowMetrics.bounds },
+                        CoverOptions(null).getActivityOptions(display).toBundle()
+                    )
+                }
             }
+        } catch (se: SecurityException) {
+            Log.w("AppDisplayListener", "startMainActivity SecurityException for $componentName: ${se.message}")
+            try {
+                val intent = Intent().apply {
+                    component = componentName
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                            Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                            Intent.FLAG_ACTIVITY_NO_ANIMATION
+                }
+                startActivity(intent, CoverOptions(null).getActivityOptions(display).toBundle())
+            } catch (e: Exception) {
+                Log.w("AppDisplayListener", "Fallback startActivity failed for $componentName: ${e.message}")
+            }
+        } catch (e: Exception) {
+            Log.w("AppDisplayListener", "restoreActivityDisplay failed for $componentName: ${e.message}")
         }
     }
 
     private fun restoreActivityDisplay(pkg: String?, cls: String?, display: Int) {
         if (null != pkg && null != cls) {
             restoreActivityDisplay(ComponentName(pkg, cls), display)
+        } else if (null != pkg) {
+            try {
+                val launchIntent = packageManager.getLaunchIntentForPackage(pkg)
+                launchIntent?.component?.let {
+                    restoreActivityDisplay(it, display)
+                }
+            } catch (e: Exception) {
+                Log.w("AppDisplayListener", "Could not get launch intent for $pkg: ${e.message}")
+            }
         }
     }
 
     private fun resetRecentActivities(componentName: ComponentName?, display: Int) {
         restoreActivityDisplay(componentName, 0)
 
-        startActivity(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or
-                    Intent.FLAG_ACTIVITY_FORWARD_RESULT or
-                    Intent.FLAG_ACTIVITY_NO_ANIMATION
-        }, CoverOptions(null).getActivityOptions(display).toBundle())
+        try {
+            startActivity(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                        Intent.FLAG_ACTIVITY_FORWARD_RESULT or
+                        Intent.FLAG_ACTIVITY_NO_ANIMATION
+            }, CoverOptions(null).getActivityOptions(display).toBundle())
+        } catch (e: Exception) {
+            Log.w("AppDisplayListener", "Error starting home on display $display", e)
+        }
     }
 
     private fun resetRecentActivities(pkg: String?, cls: String?, display: Int) {
         if (null != pkg && null != cls) {
             resetRecentActivities(ComponentName(pkg, cls), display)
+        } else if (null != pkg) {
+            try {
+                val launchIntent = packageManager.getLaunchIntentForPackage(pkg)
+                launchIntent?.component?.let {
+                    resetRecentActivities(it, display)
+                } ?: run {
+                    resetRecentActivities(null as ComponentName?, display)
+                }
+            } catch (_: Exception) {
+                resetRecentActivities(null as ComponentName?, display)
+            }
+        } else {
+            resetRecentActivities(null as ComponentName?, display)
         }
+    }
+
+    private fun returnToHome(componentName: ComponentName?, launchPackage: String?, launchActivity: String?) {
+        componentName?.let {
+            resetRecentActivities(it, 1)
+        } ?: resetRecentActivities(launchPackage, launchActivity, 1)
+        onDismissOverlay()
+        startForegroundService(
+            Intent(
+                applicationContext, OnBroadcastService::class.java
+            ).setAction(SamSprung.services)
+        )
     }
 
     private fun setClickListeners(
@@ -260,20 +348,15 @@ class AppDisplayListener : Service() {
         menu.findViewById<ImageView>(R.id.button_home).setOnClickListener {
             if (prefs.getBoolean(Preferences.prefReacts, true))
                 vibrator.vibrate(effectClick)
-            componentName?.let {
-                resetRecentActivities(it, 1)
-            } ?: resetRecentActivities(launchPackage, launchActivity, 1)
-            onDismissOverlay()
-            startForegroundService(
-                Intent(
-                    applicationContext, OnBroadcastService::class.java
-                ).setAction(SamSprung.services)
-            )
+            returnToHome(componentName, launchPackage, launchActivity)
         }
         menu.findViewById<ImageView>(R.id.button_back).setOnClickListener {
             if (prefs.getBoolean(Preferences.prefReacts, true))
                 vibrator.vibrate(effectClick)
-            AccessibilityObserver.performBackAction()
+            val handled = AccessibilityObserver.performBackAction()
+            if (!handled) {
+                returnToHome(componentName, launchPackage, launchActivity)
+            }
         }
     }
 
@@ -318,8 +401,9 @@ class AppDisplayListener : Service() {
     fun onDismissOverlay() {
         edgeGestureManager?.detach()
         edgeGestureManager = null
-        if (prefs.getBoolean(Preferences.prefRotate, false))
-            OrientationManager(this).removeOrientationLayout()
+        try {
+            OrientationManager.removeOrientationLayout(this)
+        } catch (_: Exception) {}
         try {
             with (getSystemService(DISPLAY_SERVICE) as DisplayManager) {
                 unregisterDisplayListener(mDisplayListener)

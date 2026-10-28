@@ -17,6 +17,7 @@ package com.yopa.samsprung
 import android.Manifest
 import android.annotation.SuppressLint
 import android.util.Log
+import com.yopa.samsprung.drawer.OrientationManager
 import android.app.KeyguardManager
 import android.app.NotificationManager
 import android.app.WallpaperManager
@@ -216,6 +217,9 @@ class SamSprungOverlay : AppCompatActivity() {
         supportActionBar?.hide()
 
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_BEHIND
+        try {
+            OrientationManager.removeOrientationLayout(this)
+        } catch (_: Exception) {}
 
         window.setType(WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY)
         window.setFlags(
@@ -242,7 +246,7 @@ class SamSprungOverlay : AppCompatActivity() {
             } else if (viewPager.currentItem != 1) {
                 viewPager.setCurrentItem(1, true)
             } else {
-                AccessibilityObserver.performBackAction()
+                screenOff()
             }
         }
         edgeGestureManager?.attach()
@@ -415,7 +419,6 @@ class SamSprungOverlay : AppCompatActivity() {
                             if (widget is PanelWidgetInfo) {
                                 model.removeDesktopAppWidget(widget)
                                 adapter.removeFragment(index)
-                                adapter.notifyItemRemoved(index)
                                 appWidgetHost.deleteAppWidgetId(child.appWidgetId)
                                 WidgetModel.deleteItemFromDatabase(
                                     applicationContext, widget
@@ -588,11 +591,11 @@ class SamSprungOverlay : AppCompatActivity() {
                 )
             }
             "rotation" -> {
-                val isRotationLocked = prefs.getBoolean(Preferences.prefRotate, false)
+                val isPortrait = prefs.getBoolean(Preferences.prefRotate, false)
                 TileUIState(
-                    isActive = isRotationLocked,
-                    iconRes = if (isRotationLocked) R.drawable.ic_screen_lock_rotation_24 else R.drawable.ic_screen_rotation_24,
-                    label = if (isRotationLocked) "Terkunci" else "Rotasi"
+                    isActive = isPortrait,
+                    iconRes = if (isPortrait) R.drawable.ic_screen_lock_rotation_24 else R.drawable.ic_screen_rotation_24,
+                    label = if (isPortrait) "Portrait" else "Landscape"
                 )
             }
             "torch" -> {
@@ -699,9 +702,9 @@ class SamSprungOverlay : AppCompatActivity() {
                 updateQuickTilesState()
             }
             "rotation" -> {
-                val unlocked = !prefs.getBoolean(Preferences.prefRotate, false)
+                val newIsPortrait = !prefs.getBoolean(Preferences.prefRotate, false)
                 with(prefs.edit()) {
-                    putBoolean(Preferences.prefRotate, unlocked)
+                    putBoolean(Preferences.prefRotate, newIsPortrait)
                     apply()
                 }
                 updateQuickTilesState()
@@ -1335,6 +1338,9 @@ class SamSprungOverlay : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        try {
+            OrientationManager.removeOrientationLayout(this)
+        } catch (_: Exception) {}
         WindowCompat.setDecorFitsSystemWindows(window, false)
         WindowInsetsControllerCompat(window, window.decorView).let { controller ->
             controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE

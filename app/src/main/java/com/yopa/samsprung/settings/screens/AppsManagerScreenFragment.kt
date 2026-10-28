@@ -82,7 +82,34 @@ class AppsManagerScreenFragment : Fragment() {
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
         })
 
-        // 3. App Visibility RecyclerView
+        // 3. App Launch Orientation (Lock Portrait vs Auto)
+        val textOrientationMode = view.findViewById<TextView>(R.id.text_orientation_mode)
+        val btnToggleOrientation = view.findViewById<MaterialButton>(R.id.btn_toggle_orientation_mode)
+
+        fun updateOrientationUI(mode: String) {
+            if (mode == Preferences.ORIENTATION_MODE_PORTRAIT) {
+                textOrientationMode.text = "Kunci Portrait (Tegak)"
+                btnToggleOrientation.text = "Ubah ke Otomatis"
+            } else {
+                textOrientationMode.text = "Otomatis (Mengikuti Sensor)"
+                btnToggleOrientation.text = "Kunci Portrait"
+            }
+        }
+
+        var orientationMode = prefs.getString(Preferences.prefAppOrientationMode, Preferences.ORIENTATION_MODE_PORTRAIT) ?: Preferences.ORIENTATION_MODE_PORTRAIT
+        updateOrientationUI(orientationMode)
+
+        btnToggleOrientation.setOnClickListener {
+            orientationMode = if (orientationMode == Preferences.ORIENTATION_MODE_PORTRAIT) {
+                Preferences.ORIENTATION_MODE_AUTO
+            } else {
+                Preferences.ORIENTATION_MODE_PORTRAIT
+            }
+            prefs.edit().putString(Preferences.prefAppOrientationMode, orientationMode).apply()
+            updateOrientationUI(orientationMode)
+        }
+
+        // 4. App Visibility RecyclerView
         val rv = view.findViewById<RecyclerView>(R.id.app_visibility_list)
         rv.layoutManager = LinearLayoutManager(context)
         rv.addItemDecoration(DividerItemDecoration(context, DividerItemDecoration.VERTICAL))

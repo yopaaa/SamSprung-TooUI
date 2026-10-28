@@ -13,3 +13,10 @@ keystore.properties
 captures
 build
 release
+CODING_RULES.md
+dev.sh
+PROJECT.md
+.vscode/tasks.json
+
+temp
+.kotlin/

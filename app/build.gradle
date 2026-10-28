@@ -73,6 +73,7 @@ android {
         debug {
             initWith buildTypes.release
             debuggable true
+            minifyEnabled false
             signingConfig signingConfigs.debug
         }
 

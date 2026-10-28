@@ -54,7 +54,7 @@ class EdgeGestureView(
     private val effectTriggered = VibrationEffect.createPredefined(VibrationEffect.EFFECT_TICK)
 
     private val idleWidthPx: Int = TypedValue.applyDimension(
-        TypedValue.COMPLEX_UNIT_DIP, 16f, resources.displayMetrics
+        TypedValue.COMPLEX_UNIT_DIP, 28f, resources.displayMetrics
     ).toInt()
 
     var isGestureEnabled: Boolean = true
@@ -180,6 +180,7 @@ class EdgeGestureView(
 
     private fun triggerBack() {
         post {
+            android.util.Log.d("EdgeGestureView", "triggerBack called, onBackAction=$onBackAction")
             onBackAction?.invoke() ?: AccessibilityObserver.performBackAction()
         }
     }

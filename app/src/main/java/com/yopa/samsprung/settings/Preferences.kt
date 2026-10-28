@@ -38,4 +38,9 @@ object Preferences {
     const val prefQuickNfc: String = "toggle_nfc"
     const val prefQuickDeviceCare: String = "toggle_device_care"
     const val prefQuickAuth: String = "toggle_auth"
+
+    // App Launch Orientation Mode in Cover Screen
+    const val prefAppOrientationMode: String = "pref_app_orientation_mode"
+    const val ORIENTATION_MODE_PORTRAIT: String = "portrait"
+    const val ORIENTATION_MODE_AUTO: String = "auto"
 }
