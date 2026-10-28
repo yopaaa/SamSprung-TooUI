@@ -134,33 +134,44 @@ class LauncherManager(private val overlay: SamSprungOverlay) {
         })
     }
 
-    fun launchPendingIntent(pendingIntent: PendingIntent) {
+    fun launchPendingIntent(pendingIntent: PendingIntent, packageName: String? = null) {
         overlay.setKeyguardListener(object: SamSprungOverlay.KeyguardListener {
             override fun onKeyguardCheck(unlocked: Boolean) {
                 if (!unlocked) return
                 overlay.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
                 overlay.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_BEHIND
 
-                val extras = Bundle()
-//                val parcel = Parcel.obtain()
-//                PendingIntent.writePendingIntentOrNullToParcel(pendingIntent, parcel)
-//                extras.putByteArray("pendingIntent", parcel.marshall())
-//                parcel.recycle()
-
-                pendingIntent.send(
-                    displayContext, SamSprung.request_code,
-                    Intent().setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or
-                            Intent.FLAG_ACTIVITY_TASK_ON_HOME or
-                            Intent.FLAG_ACTIVITY_FORWARD_RESULT
-                    ), null, null, null,
-                    CoverOptions(null).getActivityOptions(1).toBundle()
-                )
-
-                if (pendingIntent.intentSender.creatorPackage == "android") {
-                    extras.putString("launchPackage", "com.android.settings")
-                } else {
-                    extras.putString("launchPackage", pendingIntent.intentSender.creatorPackage)
+                val targetPkg = packageName ?: pendingIntent.creatorPackage ?: "android"
+                val extras = Bundle().apply {
+                    putString("launchPackage", if (targetPkg == "android") "com.android.settings" else targetPkg)
                 }
+
+                val options = CoverOptions(null).getActivityOptions(1).toBundle()
+
+                try {
+                    pendingIntent.send(
+                        displayContext,
+                        0,
+                        null,
+                        null,
+                        null,
+                        null,
+                        options
+                    )
+                } catch (e: Exception) {
+                    android.util.Log.e("LauncherManager", "Failed to send pendingIntent: ${e.message}", e)
+                    try {
+                        val launchIntent = overlay.packageManager.getLaunchIntentForPackage(targetPkg)
+                        if (launchIntent != null) {
+                            launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_TASK_ON_HOME)
+                            displayContext.startActivity(launchIntent, options)
+                        }
+                    } catch (e2: Exception) {
+                        android.util.Log.e("LauncherManager", "Fallback launch failed: ${e2.message}", e2)
+                    }
+                }
+
+                overlay.closeMainDrawer()
                 postOrientationHandler(extras)
             }
         })
@@ -175,8 +186,7 @@ class LauncherManager(private val overlay: SamSprungOverlay) {
 
                 intent.addFlags(
                     Intent.FLAG_ACTIVITY_NEW_TASK or
-                    Intent.FLAG_ACTIVITY_TASK_ON_HOME or
-                    Intent.FLAG_ACTIVITY_FORWARD_RESULT
+                    Intent.FLAG_ACTIVITY_TASK_ON_HOME
                 )
 
                 val options = CoverOptions(null).getAnimatedOptions(
@@ -198,6 +208,7 @@ class LauncherManager(private val overlay: SamSprungOverlay) {
                 extras.putString("launchPackage", pkg)
                 val act = targetActivity ?: intent.component?.className
                 act?.let { extras.putString("launchActivity", it) }
+                overlay.closeMainDrawer()
                 postOrientationHandler(extras)
             }
         })

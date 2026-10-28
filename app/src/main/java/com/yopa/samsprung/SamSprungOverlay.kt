@@ -893,13 +893,13 @@ class SamSprungOverlay : AppCompatActivity() {
         fun onKeyguardCheck(unlocked: Boolean)
     }
 
-    private fun dismissKeyguard(keyguardManager: KeyguardManager, authDialog: AlertDialog?) {
+    private fun dismissKeyguard(keyguardManager: KeyguardManager, authDialog: android.app.Dialog?) {
         keyguardManager.requestDismissKeyguard(this,
             object : KeyguardManager.KeyguardDismissCallback() {
             override fun onDismissCancelled() {
                 super.onDismissCancelled()
                 authDialog?.dismiss()
-                keyguardListener?.onKeyguardCheck(true)
+                keyguardListener?.onKeyguardCheck(false)
             }
 
             override fun onDismissError() {
@@ -932,17 +932,30 @@ class SamSprungOverlay : AppCompatActivity() {
         with (getSystemService(KEYGUARD_SERVICE) as KeyguardManager) {
             if (isDeviceLocked) {
                 val authView = layoutInflater.inflate(R.layout.fingerprint_auth, null)
-                val authDialog = AlertDialog.Builder(ContextThemeWrapper(
-                    this@SamSprungOverlay, R.style.Theme_Overlay_NoActionBar
-                )).setView(authView).create().apply {
+                val authDialog = android.app.Dialog(this@SamSprungOverlay, R.style.Theme_Launcher_NoActionBar).apply {
                     setCancelable(false)
-                    window?.attributes?.windowAnimations = R.style.SlidingDialogAnimation
+                    setContentView(authView)
+                    window?.apply {
+                        attributes.windowAnimations = R.style.SlidingDialogAnimation
+                        setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+                        clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+                        addFlags(
+                            WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS
+                            or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
+                            or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
+                        )
+                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                            setDecorFitsSystemWindows(false)
+                            insetsController?.hide(WindowInsets.Type.systemBars())
+                            insetsController?.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                        }
+                    }
                     show()
-                    window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-                    window?.setLayout(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.MATCH_PARENT
-                    )
+                    window?.apply {
+                        setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT)
+                        setGravity(Gravity.FILL)
+                        decorView.setPadding(0, 0, 0, 0)
+                    }
                 }
                 background?.let {
                     authView.findViewById<LinearLayout>(R.id.auth_view).background = it

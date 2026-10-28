@@ -314,19 +314,25 @@ class NotificationFragment : Fragment(), NotificationAdapter.OnNoticeClickListen
     }
 
     override fun onNoticeClicked(itemView: View, position: Int, notice: StatusBarNotification) {
-        val activity = requireActivity() as SamSprungOverlay
-        activity.setKeyguardListener(object: SamSprungOverlay.KeyguardListener {
-            override fun onKeyguardCheck(unlocked: Boolean) {
-                if (!unlocked) return
+        val contentIntent = notice.notification.contentIntent
+        if (contentIntent != null) {
+            launcherManager?.launchPendingIntent(contentIntent, notice.packageName)
+        } else {
+            val pkg = notice.packageName
+            val launchIntent = requireActivity().packageManager.getLaunchIntentForPackage(pkg)
+            if (launchIntent != null) {
+                launcherManager?.launchIntent(launchIntent, pkg)
+            } else {
                 onNoticeExpanded(itemView, position, notice)
             }
-        })
+        }
     }
 
     override fun onNoticeLongClicked(
         itemView: View, position: Int, notice: StatusBarNotification
     ) : Boolean {
         tactileFeedback()
+        onNoticeExpanded(itemView, position, notice)
         val content = StringBuilder(itemView.findViewById<TextView>(R.id.title).text)
             .append(System.lineSeparator() ?: "\n")
             .append(itemView.findViewById<TextView>(R.id.lines).text)
