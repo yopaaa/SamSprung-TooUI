@@ -662,47 +662,7 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Card 3: Transition Animation -->
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="12dp"
-            app:cardCornerRadius="14dp"
-            app:cardElevation="1dp"
-            app:strokeWidth="1dp"
-            app:strokeColor="#26FFFFFF">
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Animasi Transisi Halaman"
-                    android:textSize="16sp"
-                    android:textStyle="bold"
-                    android:textColor="?android:textColorPrimary" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:text="Efek animasi saat menggeser antar halaman di cover screen."
-                    android:textSize="12sp"
-                    android:textColor="?android:textColorSecondary" />
-
-                <Spinner
-                    android:id="@+id/spinner_page_animation"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:spinnerMode="dropdown"
-                    android:entries="@array/pageTransformers" />
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
 
         <!-- Card: Cover Screen DPI / Density -->
         <com.google.android.material.card.MaterialCardView

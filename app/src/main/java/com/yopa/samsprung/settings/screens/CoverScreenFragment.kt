@@ -115,20 +115,7 @@ class CoverScreenFragment : Fragment() {
             Toast.makeText(requireContext(), "Wallpaper cover screen telah dihapus", Toast.LENGTH_SHORT).show()
         }
 
-        // 3. Transition Animation Spinner
-        val spinnerAnimation = view.findViewById<Spinner>(R.id.spinner_page_animation)
-        val currentAnim = prefs.getInt(Preferences.prefPaging, 0)
-        if (currentAnim in 0 until spinnerAnimation.count) {
-            spinnerAnimation.setSelection(currentAnim)
-        }
-        spinnerAnimation.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>?, v: View?, position: Int, id: Long) {
-                prefs.edit().putInt(Preferences.prefPaging, position).apply()
-            }
-            override fun onNothingSelected(parent: AdapterView<*>?) {}
-        }
-
-        // 4. Cover Density Spinner
+        // 3. Cover Density Spinner
         val spinnerDensity = view.findViewById<Spinner>(R.id.spinner_cover_density)
         val textDensityHint = view.findViewById<TextView>(R.id.text_density_permission_hint)
         val btnCopyCmd = view.findViewById<MaterialButton>(R.id.btn_copy_density_cmd)

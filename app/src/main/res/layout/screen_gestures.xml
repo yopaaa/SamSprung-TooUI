@@ -136,7 +136,7 @@
             android:id="@+id/card_haptic"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="12dp"
+            android:layout_marginBottom="24dp"
             app:cardCornerRadius="14dp"
             app:cardElevation="1dp"
             app:strokeWidth="1dp"
@@ -176,40 +176,6 @@
                     android:id="@+id/switch_haptic"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- Card 4: Quick Settings Pull Down Hint -->
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp"
-            app:cardCornerRadius="14dp"
-            app:cardElevation="1dp"
-            app:strokeWidth="1dp"
-            app:strokeColor="#26FFFFFF">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Panel Pengaturan Cepat"
-                    android:textSize="16sp"
-                    android:textStyle="bold"
-                    android:textColor="?android:textColorPrimary" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:text="Usap layar dari atas ke bawah pada Halaman Jam untuk membuka Pengaturan Cepat layar penuh (Wi-Fi, Senter, DND, Bluetooth, Kunci Layar, Rotasi)."
-                    android:textSize="12sp"
-                    android:textColor="?android:textColorSecondary" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 

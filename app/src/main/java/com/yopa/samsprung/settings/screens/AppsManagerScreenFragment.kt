@@ -90,19 +90,14 @@ class AppsManagerScreenFragment : Fragment() {
         // 3. App Launch Orientation (Lock Portrait vs Auto)
         val textOrientationMode = view.findViewById<TextView>(R.id.text_orientation_mode)
         val btnToggleOrientation = view.findViewById<MaterialButton>(R.id.btn_toggle_orientation_mode)
-        val btnAlwaysPortrait = view.findViewById<MaterialButton>(R.id.btn_always_portrait)
 
         fun updateOrientationUI(mode: String) {
             if (mode == Preferences.ORIENTATION_MODE_PORTRAIT) {
                 textOrientationMode.text = "Kunci Portrait (Tegak)"
                 btnToggleOrientation.text = "Ubah ke Otomatis"
-                btnAlwaysPortrait.text = "Portrait: ON"
-                btnAlwaysPortrait.setIconResource(R.drawable.ic_screen_lock_rotation_24)
             } else {
                 textOrientationMode.text = "Otomatis (Mengikuti Sensor)"
                 btnToggleOrientation.text = "Kunci Portrait"
-                btnAlwaysPortrait.text = "Portrait: OFF"
-                btnAlwaysPortrait.setIconResource(R.drawable.ic_screen_rotation_24)
             }
         }
 
@@ -126,7 +121,6 @@ class AppsManagerScreenFragment : Fragment() {
         }
 
         btnToggleOrientation.setOnClickListener { toggleOrientation() }
-        btnAlwaysPortrait.setOnClickListener { toggleOrientation() }
 
         // 4. Sort Order Button (A-Z vs Z-A)
         val btnSortOrder = view.findViewById<MaterialButton>(R.id.btn_sort_order)

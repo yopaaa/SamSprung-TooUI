@@ -198,40 +198,18 @@
             android:layout_marginTop="2dp"
             android:layout_marginBottom="8dp" />
 
-        <!-- Control Bar: Sort Order & Always Portrait -->
-        <LinearLayout
+        <!-- Control Bar: Sort Order -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_sort_order"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:layout_marginBottom="8dp">
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_sort_order"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="6dp"
-                app:icon="@drawable/ic_sort_24dp"
-                app:iconGravity="textStart"
-                app:iconPadding="6dp"
-                android:textSize="13sp"
-                android:text="Urutan: A-Z" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_always_portrait"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="6dp"
-                app:icon="@drawable/ic_screen_rotation_24"
-                app:iconGravity="textStart"
-                app:iconPadding="6dp"
-                android:textSize="13sp"
-                android:text="Always Portrait" />
-        </LinearLayout>
+            android:layout_marginBottom="8dp"
+            app:icon="@drawable/ic_sort_24dp"
+            app:iconGravity="textStart"
+            app:iconPadding="6dp"
+            android:textSize="13sp"
+            android:text="Urutan: A-Z" />
 
     </LinearLayout>
 

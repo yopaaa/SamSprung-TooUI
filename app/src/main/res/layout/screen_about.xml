@@ -152,7 +152,7 @@
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp"
+            android:layout_marginBottom="16dp"
             app:cardCornerRadius="14dp"
             app:cardElevation="1dp"
             app:strokeWidth="1dp"
@@ -188,6 +188,18 @@
                     android:text="Dukung Pengembang (Donasi)" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
+
+        <!-- Copyright Info -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="24dp"
+            android:gravity="center"
+            android:text="Copyright (C) 2022 SamSprung\nCopyright (C) 2026 yopaaa"
+            android:textSize="12sp"
+            android:textColor="?android:textColorSecondary"
+            android:lineSpacingExtra="4dp" />
 
     </LinearLayout>
 </ScrollView>
