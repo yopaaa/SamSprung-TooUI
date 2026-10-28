@@ -137,9 +137,8 @@ class CoverPreferences : AppCompatActivity() {
             if (extension.equals("gif", true)) {
                 saveAnimatedImage(document)
             } else {
-                saveStaticImage(document)
+                showWallpaperCropDialog(document)
             }
-            Toast.makeText(this@CoverPreferences, "Wallpaper cover screen berhasil diperbarui", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -343,7 +342,57 @@ class CoverPreferences : AppCompatActivity() {
         return false
     }
 
-    // --- Wallpaper Saving ---
+    // --- Wallpaper Saving & Cropping ---
+
+    fun notifyWallpaperUpdated() {
+        val currentFrag = supportFragmentManager.findFragmentById(R.id.container_settings)
+        if (currentFrag is com.yopa.samsprung.settings.screens.CoverScreenFragment) {
+            currentFrag.updateWallpaperPreview()
+        }
+    }
+
+    private fun showWallpaperCropDialog(sourceUri: Uri) {
+        try {
+            val source = ImageDecoder.createSource(contentResolver, sourceUri)
+            val bitmap = ImageDecoder.decodeBitmap(source) { decoder, _, _ ->
+                decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
+                decoder.isMutableRequired = true
+            }
+
+            var rotation = 0
+            contentResolver.query(
+                sourceUri, arrayOf(MediaStore.Images.ImageColumns.ORIENTATION),
+                null, null, null
+            )?.use {
+                if (it.count == 1) {
+                    it.moveToFirst()
+                    rotation = it.getInt(0)
+                }
+            }
+
+            val orientedBitmap = if (rotation != 0) {
+                val matrix = Matrix().apply { postRotate(rotation.toFloat()) }
+                Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+            } else {
+                bitmap
+            }
+
+            val isPortraitDefault = getSharedPreferences(Preferences.prefsValue, MODE_PRIVATE)
+                .getBoolean(Preferences.prefRotate, false)
+
+            WallpaperCropDialog(this, orientedBitmap, isPortraitDefault) { croppedBitmap ->
+                val animated = File(filesDir, "wallpaper.gif")
+                if (animated.exists()) animated.delete()
+                val background = File(filesDir, "wallpaper.png")
+                background.writeBitmap(croppedBitmap, Bitmap.CompressFormat.PNG, 100)
+                Toast.makeText(this, "Wallpaper cover berhasil disesuaikan & disimpan!", Toast.LENGTH_SHORT).show()
+                notifyWallpaperUpdated()
+            }.show()
+        } catch (e: Exception) {
+            android.util.Log.e("CoverPreferences", "Failed to load image for cropping", e)
+            Toast.makeText(this, "Gagal memuat gambar untuk disesuaikan", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     private fun saveAnimatedImage(sourceUri: Uri) {
         val background = File(filesDir, "wallpaper.png")
@@ -356,43 +405,11 @@ class CoverPreferences : AppCompatActivity() {
                         stream?.copyTo(it)
                     }
                 }
+                kotlinx.coroutines.withContext(Dispatchers.Main) {
+                    Toast.makeText(this@CoverPreferences, "Wallpaper animasi GIF diterapkan!", Toast.LENGTH_SHORT).show()
+                    notifyWallpaperUpdated()
+                }
             } catch (e: IOException) {
-                e.printStackTrace()
-            }
-        }
-    }
-
-    private fun saveStaticImage(sourceUri: Uri) {
-        val animated = File(filesDir, "wallpaper.gif")
-        if (animated.exists()) animated.delete()
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val source: ImageDecoder.Source = ImageDecoder.createSource(
-                    this@CoverPreferences.contentResolver, sourceUri
-                )
-                val bitmap: Bitmap = ImageDecoder.decodeBitmap(source)
-                var rotation = -1
-                val background = File(filesDir, "wallpaper.png")
-                contentResolver.query(
-                    sourceUri, arrayOf(MediaStore.Images.ImageColumns.ORIENTATION),
-                    null, null, null
-                )?.use {
-                    if (it.count == 1) {
-                        it.moveToFirst()
-                        rotation = it.getInt(0)
-                    }
-                }
-                if (rotation > 0) {
-                    val matrix = Matrix()
-                    matrix.postRotate(rotation.toFloat())
-                    background.writeBitmap(
-                        Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true),
-                        Bitmap.CompressFormat.PNG, 100
-                    )
-                } else {
-                    background.writeBitmap(bitmap, Bitmap.CompressFormat.PNG, 100)
-                }
-            } catch (e: Exception) {
                 e.printStackTrace()
             }
         }

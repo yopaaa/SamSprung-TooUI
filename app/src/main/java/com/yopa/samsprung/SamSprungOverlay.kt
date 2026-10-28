@@ -31,10 +31,13 @@ import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.content.pm.PackageManager.ApplicationInfoFlags
 import android.database.ContentObserver
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.ImageDecoder
 import android.graphics.PixelFormat
 import android.graphics.drawable.AnimatedImageDrawable
+import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.hardware.camera2.CameraManager
@@ -285,7 +288,21 @@ class SamSprungOverlay : AppCompatActivity() {
             val wallpaper = File(filesDir, "wallpaper.png")
             if (wallpaper.exists()) {
                 try {
-                    background = Drawable.createFromPath(wallpaper.absolutePath)
+                    val bitmap = BitmapFactory.decodeFile(wallpaper.absolutePath)
+                    if (bitmap != null) {
+                        val displayMetrics = resources.displayMetrics
+                        val screenW = displayMetrics.widthPixels
+                        val screenH = displayMetrics.heightPixels
+                        val screenRatio = screenW.toFloat() / screenH.toFloat()
+                        val bitmapRatio = bitmap.width.toFloat() / bitmap.height.toFloat()
+
+                        val finalBitmap = if (kotlin.math.abs(screenRatio - bitmapRatio) > 0.05f) {
+                            cropBitmapToScreenRatio(bitmap, screenRatio)
+                        } else {
+                            bitmap
+                        }
+                        background = BitmapDrawable(resources, finalBitmap)
+                    }
                 } catch (_: Exception) { }
             }
             val permissions: Array<String> =
@@ -666,6 +683,26 @@ class SamSprungOverlay : AppCompatActivity() {
                 )
             }
         }
+    }
+
+    private fun cropBitmapToScreenRatio(src: Bitmap, targetRatio: Float): Bitmap {
+        val srcRatio = src.width.toFloat() / src.height.toFloat()
+        val cropW: Int
+        val cropH: Int
+        val left: Int
+        val top: Int
+        if (srcRatio > targetRatio) {
+            cropH = src.height
+            cropW = (cropH * targetRatio).toInt().coerceAtMost(src.width)
+            left = (src.width - cropW) / 2
+            top = 0
+        } else {
+            cropW = src.width
+            cropH = (cropW / targetRatio).toInt().coerceAtMost(src.height)
+            left = 0
+            top = (src.height - cropH) / 2
+        }
+        return Bitmap.createBitmap(src, left, top, cropW, cropH)
     }
 
     private fun handleQuickTileClick(tile: QuickTileData) {

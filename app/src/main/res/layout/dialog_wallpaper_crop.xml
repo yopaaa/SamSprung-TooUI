@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    app:cardCornerRadius="18dp"
+    app:cardElevation="6dp"
+    app:cardBackgroundColor="#1E1E1E">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Title & Subtitle -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Sesuaikan Wallpaper Cover"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/white" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="Geser (1 jari) dan cubit/zoom (2 jari) untuk memilih area wallpaper."
+            android:textSize="12sp"
+            android:textColor="#B3FFFFFF" />
+
+        <!-- Interactive Crop View -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="260dp"
+            android:layout_marginTop="12dp"
+            android:background="#0D0D0D">
+
+            <com.yopa.samsprung.view.CoverCropView
+                android:id="@+id/cover_crop_view"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+        </FrameLayout>
+
+        <!-- Tool Buttons Row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <!-- 1. Toggle Orientation (Lanskap / Potret) -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_toggle_orientation"
+                android:layout_width="0dp"
+                android:layout_height="42dp"
+                android:layout_weight="1"
+                android:textSize="11.5sp"
+                android:text="Lanskap (512×260)"
+                android:textColor="@android:color/white"
+                app:backgroundTint="#2A2A2A"
+                app:strokeColor="#44FFFFFF"
+                app:strokeWidth="1dp"
+                app:cornerRadius="10dp"
+                app:icon="@drawable/ic_screen_rotation_24"
+                app:iconTint="@android:color/white"
+                app:iconSize="16dp" />
+
+            <!-- 2. Rotate 90 Degrees -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_crop_rotate"
+                android:layout_width="wrap_content"
+                android:layout_height="42dp"
+                android:layout_marginStart="6dp"
+                android:textSize="11.5sp"
+                android:text="Putar 90°"
+                android:textColor="@android:color/white"
+                app:backgroundTint="#2A2A2A"
+                app:strokeColor="#44FFFFFF"
+                app:strokeWidth="1dp"
+                app:cornerRadius="10dp" />
+
+            <!-- 3. Reset / Center Image -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_crop_reset"
+                android:layout_width="wrap_content"
+                android:layout_height="42dp"
+                android:layout_marginStart="6dp"
+                android:textSize="11.5sp"
+                android:text="Pusatkan"
+                android:textColor="@android:color/white"
+                app:backgroundTint="#2A2A2A"
+                app:strokeColor="#44FFFFFF"
+                app:strokeWidth="1dp"
+                app:cornerRadius="10dp" />
+        </LinearLayout>
+
+        <!-- Bottom Action Buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:gravity="end"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_crop_cancel"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Batal"
+                android:textColor="#B3FFFFFF" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_crop_apply"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="Terapkan"
+                android:textColor="@android:color/black"
+                app:backgroundTint="#00E676" />
+        </LinearLayout>
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

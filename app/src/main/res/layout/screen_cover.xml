@@ -110,6 +110,71 @@
                     android:textSize="12sp"
                     android:textColor="?android:textColorSecondary" />
 
+                <!-- Wallpaper Preview Card -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/card_wallpaper_preview_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="140dp"
+                    android:layout_marginTop="12dp"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="0dp"
+                    app:strokeWidth="1.5dp"
+                    app:strokeColor="#33FFFFFF"
+                    app:cardBackgroundColor="#161616">
+
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent">
+
+                        <!-- Preview Image View with centerCrop -->
+                        <androidx.appcompat.widget.AppCompatImageView
+                            android:id="@+id/iv_wallpaper_preview"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:scaleType="centerCrop"
+                            android:contentDescription="Pratinjau Wallpaper" />
+
+                        <!-- Empty State Container when no wallpaper set -->
+                        <LinearLayout
+                            android:id="@+id/layout_wallpaper_empty"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center"
+                            android:gravity="center"
+                            android:orientation="vertical">
+
+                            <androidx.appcompat.widget.AppCompatImageView
+                                android:layout_width="36dp"
+                                android:layout_height="36dp"
+                                android:src="@drawable/ic_wallpaper_24dp"
+                                app:tint="#80FFFFFF"
+                                android:contentDescription="@null" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="6dp"
+                                android:text="Belum ada wallpaper kustom"
+                                android:textSize="12sp"
+                                android:textColor="#80FFFFFF" />
+                        </LinearLayout>
+
+                        <!-- Cover screen badge tag -->
+                        <TextView
+                            android:id="@+id/tv_wallpaper_badge"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="bottom|end"
+                            android:layout_margin="8dp"
+                            android:background="@drawable/bg_circle_button"
+                            android:paddingHorizontal="8dp"
+                            android:paddingVertical="3dp"
+                            android:text="Layar Cover (512×260)"
+                            android:textSize="10sp"
+                            android:textColor="#CCFFFFFF" />
+                    </FrameLayout>
+                </com.google.android.material.card.MaterialCardView>
+
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"

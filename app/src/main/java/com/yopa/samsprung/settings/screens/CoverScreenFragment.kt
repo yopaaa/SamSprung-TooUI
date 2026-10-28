@@ -1,7 +1,12 @@
 package com.yopa.samsprung.settings.screens
 
 import android.content.Context
+import android.graphics.BitmapFactory
+import android.graphics.ImageDecoder
+import android.graphics.drawable.AnimatedImageDrawable
+import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,6 +15,7 @@ import android.widget.SeekBar
 import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.widget.AppCompatImageView
 import androidx.appcompat.widget.SwitchCompat
 import androidx.fragment.app.Fragment
 import com.google.android.material.button.MaterialButton
@@ -19,6 +25,11 @@ import com.yopa.samsprung.settings.Preferences
 import java.io.File
 
 class CoverScreenFragment : Fragment() {
+
+    private lateinit var ivWallpaperPreview: AppCompatImageView
+    private lateinit var layoutWallpaperEmpty: View
+    private lateinit var tvWallpaperBadge: TextView
+    private lateinit var btnRemoveWallpaper: MaterialButton
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -40,15 +51,23 @@ class CoverScreenFragment : Fragment() {
             prefs.edit().putBoolean(Preferences.prefRotate, isChecked).apply()
         }
 
-        // 2. Wallpaper Buttons
+        // 2. Wallpaper Preview & Buttons
+        ivWallpaperPreview = view.findViewById(R.id.iv_wallpaper_preview)
+        layoutWallpaperEmpty = view.findViewById(R.id.layout_wallpaper_empty)
+        tvWallpaperBadge = view.findViewById(R.id.tv_wallpaper_badge)
+        btnRemoveWallpaper = view.findViewById(R.id.btn_remove_wallpaper)
+
+        updateWallpaperPreview()
+
         view.findViewById<MaterialButton>(R.id.btn_choose_wallpaper).setOnClickListener {
             prefActivity?.pickWallpaper()
         }
-        view.findViewById<MaterialButton>(R.id.btn_remove_wallpaper).setOnClickListener {
+        btnRemoveWallpaper.setOnClickListener {
             val png = File(requireContext().filesDir, "wallpaper.png")
             val gif = File(requireContext().filesDir, "wallpaper.gif")
             if (png.exists()) png.delete()
             if (gif.exists()) gif.delete()
+            updateWallpaperPreview()
             Toast.makeText(requireContext(), "Wallpaper cover screen telah dihapus", Toast.LENGTH_SHORT).show()
         }
 
@@ -153,5 +172,58 @@ class CoverScreenFragment : Fragment() {
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
         })
+    }
+
+    override fun onResume() {
+        super.onResume()
+        updateWallpaperPreview()
+    }
+
+    fun updateWallpaperPreview() {
+        if (!::ivWallpaperPreview.isInitialized) return
+        val context = context ?: return
+        val gif = File(context.filesDir, "wallpaper.gif")
+        val png = File(context.filesDir, "wallpaper.png")
+
+        if (gif.exists()) {
+            try {
+                val source = ImageDecoder.createSource(context.contentResolver, Uri.fromFile(gif))
+                val drawable = ImageDecoder.decodeDrawable(source)
+                ivWallpaperPreview.setImageDrawable(drawable)
+                ivWallpaperPreview.visibility = View.VISIBLE
+                layoutWallpaperEmpty.visibility = View.GONE
+                tvWallpaperBadge.text = "Animasi GIF"
+                btnRemoveWallpaper.isEnabled = true
+                if (drawable is AnimatedImageDrawable) {
+                    drawable.start()
+                }
+                return
+            } catch (e: Exception) {
+                Log.w("CoverScreenFragment", "Failed to decode wallpaper.gif preview", e)
+            }
+        }
+
+        if (png.exists()) {
+            try {
+                val bitmap = BitmapFactory.decodeFile(png.absolutePath)
+                if (bitmap != null) {
+                    ivWallpaperPreview.setImageBitmap(bitmap)
+                    ivWallpaperPreview.visibility = View.VISIBLE
+                    layoutWallpaperEmpty.visibility = View.GONE
+                    tvWallpaperBadge.text = "${bitmap.width} × ${bitmap.height}"
+                    btnRemoveWallpaper.isEnabled = true
+                    return
+                }
+            } catch (e: Exception) {
+                Log.w("CoverScreenFragment", "Failed to decode wallpaper.png preview", e)
+            }
+        }
+
+        // Empty state
+        ivWallpaperPreview.setImageDrawable(null)
+        ivWallpaperPreview.visibility = View.GONE
+        layoutWallpaperEmpty.visibility = View.VISIBLE
+        tvWallpaperBadge.text = "Layar Cover (512×260)"
+        btnRemoveWallpaper.isEnabled = false
     }
 }
