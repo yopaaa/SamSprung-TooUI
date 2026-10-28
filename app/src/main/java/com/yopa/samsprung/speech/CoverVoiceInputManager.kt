@@ -36,7 +36,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
 import android.widget.ImageView
-import android.widget.Toast
+import androidx.appcompat.widget.AppCompatImageView
 import com.yopa.os.Version
 import com.yopa.samsprung.AccessibilityObserver
 import com.yopa.samsprung.BuildConfig
@@ -48,7 +48,7 @@ import kotlin.math.abs
 class CoverVoiceInputManager(
     private val context: Context,
     private val windowManager: WindowManager
-) {
+) : AccessibilityObserver.InputFocusListener {
 
     companion object {
         private const val TAG = "CoverVoiceInput"
@@ -56,6 +56,25 @@ class CoverVoiceInputManager(
 
     private val prefs: SharedPreferences by lazy {
         context.getSharedPreferences(Preferences.prefsValue, Context.MODE_PRIVATE)
+    }
+
+    private val prefListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (key == Preferences.prefFloatingVoice) {
+            val enabled = prefs.getBoolean(Preferences.prefFloatingVoice, true)
+            Handler(Looper.getMainLooper()).post {
+                if (enabled) {
+                    attachFloatingButton()
+                } else {
+                    detachFloatingButton()
+                }
+            }
+        }
+    }
+
+    init {
+        try {
+            prefs.registerOnSharedPreferenceChangeListener(prefListener)
+        } catch (_: Exception) {}
     }
 
     private val vibrator: Vibrator by lazy {
@@ -77,7 +96,8 @@ class CoverVoiceInputManager(
 
     // Floating Voice Bar View
     private var barView: View? = null
-    private var micIcon: ImageView? = null
+    private var micIcon: AppCompatImageView? = null
+    private var backspaceIcon: AppCompatImageView? = null
     private var isBarAttached = false
 
     // Dragging state
@@ -95,7 +115,14 @@ class CoverVoiceInputManager(
 
         try {
             val view = LayoutInflater.from(context).inflate(R.layout.cover_voice_bar, null)
+
             micIcon = view.findViewById(R.id.bar_mic_icon)
+            micIcon?.setImageResource(R.drawable.ic_mic_24dp)
+            micIcon?.setColorFilter(Color.parseColor("#00E676"))
+
+            backspaceIcon = view.findViewById(R.id.bar_backspace_icon)
+            backspaceIcon?.setImageResource(R.drawable.ic_backspace_24dp)
+            backspaceIcon?.setColorFilter(Color.WHITE)
 
             val params = WindowManager.LayoutParams(
                 WindowManager.LayoutParams.WRAP_CONTENT,
@@ -104,17 +131,18 @@ class CoverVoiceInputManager(
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
                 PixelFormat.TRANSLUCENT
             ).apply {
+                // Bottom-center, above the SamSprung nav bar (~64dp)
                 gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
-                y = 16
+                x = 0
+                y = 72
             }
 
-            // Drag handle touch listener
-            val dragHandle = view.findViewById<View>(R.id.bar_drag_handle)
-            dragHandle.setOnTouchListener { _, event ->
+            // Dragging listener on the bar root
+            view.setOnTouchListener { _, event ->
                 handleDrag(view, params, event)
             }
 
-            // Mic button: Tap to start / stop speaking
+            // 1. Mic button (🎙️)
             view.findViewById<View>(R.id.bar_button_mic).setOnClickListener {
                 vibrateClick()
                 if (isListening) {
@@ -124,45 +152,51 @@ class CoverVoiceInputManager(
                 }
             }
 
-            // Backspace button (⌫): Tap = delete last word, Long-press = clear text
+            // 2. Backspace button (⌫): Tap = delete last word, Long-press = clear text
             val btnBackspace = view.findViewById<View>(R.id.bar_button_backspace)
             btnBackspace.setOnClickListener {
                 vibrateClick()
-                val deleted = AccessibilityObserver.performBackspace()
-                if (!deleted) {
-                    Log.d(TAG, "performBackspace did not find text to delete")
-                }
+                AccessibilityObserver.performBackspace()
+                baseText = AccessibilityObserver.getCurrentInputText().trim()
             }
             btnBackspace.setOnLongClickListener {
                 vibrateHeavy()
                 AccessibilityObserver.performClear()
-                Toast.makeText(context, "Teks dihapus", Toast.LENGTH_SHORT).show()
+                baseText = ""
                 true
             }
 
-            // Send button (🚀): Tap to send in WhatsApp
-            view.findViewById<View>(R.id.bar_button_send).setOnClickListener {
-                vibrateClick()
-                if (isListening) {
-                    stopListening()
-                }
-                val sent = AccessibilityObserver.performSend()
-                if (sent) {
-                    Toast.makeText(context, "Terkirim!", Toast.LENGTH_SHORT).show()
-                } else {
-                    // Try one more time with small delay
-                    Handler(Looper.getMainLooper()).postDelayed({
-                        AccessibilityObserver.performSend()
-                    }, 200)
-                }
-            }
+            // Always visible and fully opaque so user can always see it
+            view.visibility = View.VISIBLE
+            view.alpha = 1.0f
 
             windowManager.addView(view, params)
             barView = view
             isBarAttached = true
-            Log.d(TAG, "Cover voice bar attached successfully")
+
+            // Register listener — if it fires, keep fully opaque
+            AccessibilityObserver.setInputFocusListener(this)
+
+            // Vibrate lightly so user knows bar appeared
+            vibrateClick()
+
+            Log.d(TAG, "Cover voice bar attached (always visible, size=126x64)")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to attach cover voice bar", e)
+        }
+    }
+
+    override fun onInputFocusChanged(isFocused: Boolean) {
+        Handler(Looper.getMainLooper()).post {
+            barView?.let { bar ->
+                bar.visibility = View.VISIBLE
+                bar.alpha = 1.0f
+                if (isFocused) {
+                    Log.d(TAG, "Input focused -> bar fully visible")
+                } else {
+                    Log.d(TAG, "Input unfocused -> bar still visible")
+                }
+            }
         }
     }
 
@@ -178,31 +212,32 @@ class CoverVoiceInputManager(
                 initialTouchX = event.rawX
                 initialTouchY = event.rawY
                 isMoving = false
-                return true
+                return false
             }
             MotionEvent.ACTION_MOVE -> {
                 val dx = (event.rawX - initialTouchX).toInt()
                 val dy = (event.rawY - initialTouchY).toInt()
-                if (abs(dx) > 8 || abs(dy) > 8) {
+                if (abs(dx) > 10 || abs(dy) > 10) {
                     isMoving = true
-                    params.x = initialX + dx
+                    params.x = initialX - dx
                     params.y = initialY - dy
                     try {
                         windowManager.updateViewLayout(view, params)
                     } catch (e: Exception) {
                         Log.w(TAG, "Error updating voice bar layout", e)
                     }
+                    return true
                 }
-                return true
             }
             MotionEvent.ACTION_UP -> {
-                return true
+                if (isMoving) return true
             }
         }
         return false
     }
 
     fun detachFloatingButton() {
+        AccessibilityObserver.setInputFocusListener(null)
         if (!isBarAttached) return
         stopListening()
         barView?.let {
@@ -217,14 +252,17 @@ class CoverVoiceInputManager(
     }
 
     fun showVoiceDialog(initialText: String? = null) {
-        // Now directly triggers speech recognition into the active input!
-        if (!isListening) {
-            startListening()
+        barView?.let {
+            it.visibility = View.VISIBLE
+            if (!isListening) {
+                startListening()
+            }
         }
     }
 
     fun dismissVoiceDialog() {
         stopListening()
+        barView?.visibility = View.GONE
     }
 
     private fun startListening() {
@@ -244,15 +282,15 @@ class CoverVoiceInputManager(
                 putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, BuildConfig.APPLICATION_ID)
                 putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
                 putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
-                val langTag = Locale.getDefault().toLanguageTag()
-                putExtra(RecognizerIntent.EXTRA_LANGUAGE, langTag)
-                putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, langTag)
+                // Use Indonesian as primary voice recognition language
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE, "id-ID")
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "id-ID")
             }
 
             speechRecognizer?.startListening(intent)
             isListening = true
             updateMicUI(true)
-            Log.d(TAG, "SpeechRecognizer started listening directly to input")
+            Log.d(TAG, "SpeechRecognizer started listening (id-ID)")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to start speech recognizer", e)
             updateMicUI(false)
@@ -331,21 +369,27 @@ class CoverVoiceInputManager(
                 updateMicUI(false)
                 val data = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                 if (!data.isNullOrEmpty()) {
-                    val spoken = data[0]
-                    val combined = if (baseText.isNotEmpty()) "$baseText $spoken" else spoken
-                    AccessibilityObserver.insertDirect(combined)
-                    baseText = combined
-                    Log.d(TAG, "Speech final result inserted directly: '$combined'")
+                    val spoken = data[0]?.trim() ?: ""
+                    if (spoken.isNotEmpty()) {
+                        val combined = if (baseText.isNotEmpty()) "$baseText $spoken" else spoken
+                        val success = AccessibilityObserver.insertDirect(combined)
+                        if (success) {
+                            baseText = combined
+                        }
+                        Log.d(TAG, "Speech final result inserted: '$combined', success=$success")
+                    }
                 }
             }
 
             override fun onPartialResults(partialResults: Bundle?) {
                 val data = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                 if (!data.isNullOrEmpty()) {
-                    val partial = data[0]
-                    val combined = if (baseText.isNotEmpty()) "$baseText $partial" else partial
-                    AccessibilityObserver.insertDirect(combined)
-                    Log.d(TAG, "Speech partial result inserted directly: '$combined'")
+                    val partial = data[0]?.trim() ?: ""
+                    if (partial.isNotEmpty()) {
+                        val combined = if (baseText.isNotEmpty()) "$baseText $partial" else partial
+                        AccessibilityObserver.insertDirect(combined)
+                        Log.d(TAG, "Speech partial result inserted: '$combined'")
+                    }
                 }
             }
 
@@ -366,6 +410,10 @@ class CoverVoiceInputManager(
     }
 
     fun destroy() {
+        try {
+            prefs.unregisterOnSharedPreferenceChangeListener(prefListener)
+        } catch (_: Exception) {}
+        AccessibilityObserver.setInputFocusListener(null)
         detachFloatingButton()
         try {
             speechRecognizer?.destroy()

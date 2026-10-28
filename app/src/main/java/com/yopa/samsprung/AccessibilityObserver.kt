@@ -20,6 +20,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -33,13 +34,49 @@ import java.io.File
 
 class AccessibilityObserver : AccessibilityService() {
 
+    interface InputFocusListener {
+        fun onInputFocusChanged(isFocused: Boolean)
+    }
+
     companion object {
         private const val TAG = "AccessibilityObserver"
         private var observerInstance: AccessibilityObserver? = null
         private var isConnected: Boolean = false
+        private var inputFocusListener: InputFocusListener? = null
+        private var cachedInputNode: AccessibilityNodeInfo? = null
+
+        fun setInputFocusListener(listener: InputFocusListener?) {
+            inputFocusListener = listener
+        }
 
         fun getInstance(): AccessibilityObserver? {
             return observerInstance
+        }
+
+        fun ensureServiceEnabled(context: Context) {
+            try {
+                if (!hasEnabledService(context)) {
+                    val component = "${context.packageName}/${AccessibilityObserver::class.java.name}"
+                    val current = Settings.Secure.getString(
+                        context.contentResolver,
+                        Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+                    ) ?: ""
+                    val newServices = if (current.isEmpty()) component else "$current:$component"
+                    Settings.Secure.putString(
+                        context.contentResolver,
+                        Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES,
+                        newServices
+                    )
+                    Settings.Secure.putInt(
+                        context.contentResolver,
+                        Settings.Secure.ACCESSIBILITY_ENABLED,
+                        1
+                    )
+                    Log.d(TAG, "Enabled AccessibilityObserver via secure settings")
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Could not enable accessibility service automatically", e)
+            }
         }
 
         fun hasEnabledService(context: Context): Boolean {
@@ -77,54 +114,164 @@ class AccessibilityObserver : AccessibilityService() {
 
         fun getActiveInputNode(): AccessibilityNodeInfo? {
             val inst = getInstance() ?: return null
-            inst.rootInActiveWindow?.let { root ->
-                val node = findInputInRoot(root)
-                if (node != null) return node
+
+            // 1. Try cached node if still valid and editable
+            cachedInputNode?.let { cached ->
+                try {
+                    if (cached.refresh() && cached.isEditable) {
+                        return cached
+                    }
+                } catch (_: Exception) {}
+                cachedInputNode = null
             }
+
+            // 2. Multi-display search (API 30+) - Prioritize Display 1 (Cover screen)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                try {
+                    val allDisplays = inst.windowsOnAllDisplays
+                    val display1Windows = allDisplays.get(1)
+                    if (display1Windows != null) {
+                        for (win in display1Windows) {
+                            win.root?.let { root ->
+                                val node = findInputInRoot(root)
+                                if (node != null) {
+                                    cachedInputNode = node
+                                    return node
+                                }
+                            }
+                        }
+                    }
+                    for (i in 0 until allDisplays.size()) {
+                        val dId = allDisplays.keyAt(i)
+                        if (dId == 1) continue
+                        val winList = allDisplays.valueAt(i) ?: continue
+                        for (win in winList) {
+                            win.root?.let { root ->
+                                val node = findInputInRoot(root)
+                                if (node != null) {
+                                    cachedInputNode = node
+                                    return node
+                                }
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.w(TAG, "Error checking windowsOnAllDisplays", e)
+                }
+            }
+
+            // 3. Check rootInActiveWindow
+            try {
+                inst.rootInActiveWindow?.let { root ->
+                    val node = findInputInRoot(root)
+                    if (node != null) {
+                        cachedInputNode = node
+                        return node
+                    }
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Error checking rootInActiveWindow", e)
+            }
+
+            // 4. Fallback: Check inst.windows
             try {
                 for (win in inst.windows) {
-                    if (win.displayId == 1 || win.isFocused || win.isActive) {
-                        win.root?.let { root ->
-                            val node = findInputInRoot(root)
-                            if (node != null) return node
+                    win.root?.let { root ->
+                        val node = findInputInRoot(root)
+                        if (node != null) {
+                            cachedInputNode = node
+                            return node
                         }
                     }
                 }
             } catch (e: Exception) {
                 Log.w(TAG, "Error checking inst.windows", e)
             }
+
             return null
         }
 
         private fun findInputInRoot(root: AccessibilityNodeInfo): AccessibilityNodeInfo? {
-            val focused = root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
-            if (focused != null && focused.isEditable) {
-                return focused
+            // 1. WhatsApp entry view ID
+            try {
+                val byId = root.findAccessibilityNodeInfosByViewId("com.whatsapp:id/entry")
+                if (!byId.isNullOrEmpty() && byId[0].isEditable) {
+                    return byId[0]
+                }
+            } catch (_: Exception) {}
+
+            // 2. Focused editable node
+            try {
+                val focused = root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
+                if (focused != null && focused.isEditable) {
+                    return focused
+                }
+            } catch (_: Exception) {}
+
+            // 3. Other common messenger input IDs
+            val commonIds = listOf(
+                "org.telegram.messenger:id/chat_text_edit",
+                "com.google.android.apps.messaging:id/compose_message_text",
+                "com.samsung.android.messaging:id/message_edit_text",
+                "android:id/input"
+            )
+            for (id in commonIds) {
+                try {
+                    val nodes = root.findAccessibilityNodeInfosByViewId(id)
+                    if (!nodes.isNullOrEmpty() && nodes[0].isEditable) {
+                        return nodes[0]
+                    }
+                } catch (_: Exception) {}
             }
-            val byId = root.findAccessibilityNodeInfosByViewId("com.whatsapp:id/entry")
-            if (!byId.isNullOrEmpty() && byId[0].isEditable) {
-                return byId[0]
-            }
+
+            // 4. Any editable node in hierarchy
             return findEditableNode(root)
         }
 
         fun getCurrentInputText(): String {
-            return getActiveInputNode()?.text?.toString() ?: ""
+            val node = getActiveInputNode() ?: return ""
+            node.refresh()
+            return node.text?.toString() ?: ""
         }
 
         fun insertDirect(text: CharSequence): Boolean {
-            val node = getActiveInputNode() ?: return false
-            node.performAction(AccessibilityNodeInfo.ACTION_FOCUS)
-            val args = Bundle().apply {
-                putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)
+            if (text.isBlank()) return false
+            val node = getActiveInputNode()
+            if (node == null) {
+                Log.w(TAG, "insertDirect: No active input node found")
+                return false
             }
-            val success = node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
-            Log.d(TAG, "insertDirect ACTION_SET_TEXT result: $success")
-            return success
+
+            try {
+                node.refresh()
+                node.performAction(AccessibilityNodeInfo.ACTION_FOCUS)
+                val args = Bundle().apply {
+                    putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)
+                }
+                var success = node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
+                Log.d(TAG, "insertDirect ACTION_SET_TEXT result: $success, text='$text'")
+
+                if (!success) {
+                    // Fallback: Clipboard paste
+                    val inst = getInstance()
+                    if (inst != null) {
+                        val clipboard = inst.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                        val clip = ClipData.newPlainText("voice_input", text)
+                        clipboard.setPrimaryClip(clip)
+                        success = node.performAction(AccessibilityNodeInfo.ACTION_PASTE)
+                        Log.d(TAG, "insertDirect fallback ACTION_PASTE result: $success")
+                    }
+                }
+                return success
+            } catch (e: Exception) {
+                Log.e(TAG, "insertDirect exception", e)
+                return false
+            }
         }
 
         fun performBackspace(): Boolean {
             val node = getActiveInputNode() ?: return false
+            node.refresh()
             val current = node.text?.toString() ?: ""
             if (current.isEmpty()) return false
 
@@ -142,13 +289,22 @@ class AccessibilityObserver : AccessibilityService() {
             val args = Bundle().apply {
                 putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, newText)
             }
-            val success = node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
+            var success = node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
+            if (!success && newText.isEmpty()) {
+                val inst = getInstance()
+                if (inst != null) {
+                    val clipboard = inst.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                    clipboard.setPrimaryClip(ClipData.newPlainText("empty", ""))
+                    node.performAction(AccessibilityNodeInfo.ACTION_PASTE)
+                }
+            }
             Log.d(TAG, "performBackspace result: $success, newText='$newText'")
             return success
         }
 
         fun performClear(): Boolean {
             val node = getActiveInputNode() ?: return false
+            node.refresh()
             node.performAction(AccessibilityNodeInfo.ACTION_FOCUS)
             val args = Bundle().apply {
                 putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, "")
@@ -309,7 +465,36 @@ class AccessibilityObserver : AccessibilityService() {
         }
     }
 
-    override fun onAccessibilityEvent(event: AccessibilityEvent) { }
+    override fun onAccessibilityEvent(event: AccessibilityEvent) {
+        val src = try { event.source } catch (_: Exception) { null }
+        if (src != null) {
+            val isEditable = src.isEditable ||
+                    src.className?.contains("EditText") == true ||
+                    src.viewIdResourceName?.contains("entry") == true
+            if (isEditable) {
+                cachedInputNode = src
+            }
+        }
+
+        val listener = inputFocusListener ?: return
+        when (event.eventType) {
+            AccessibilityEvent.TYPE_VIEW_FOCUSED -> {
+                val editable = src != null && (src.isEditable || src.className?.contains("EditText") == true)
+                listener.onInputFocusChanged(editable)
+            }
+            AccessibilityEvent.TYPE_VIEW_CLICKED -> {
+                if (src != null && (src.isEditable || src.className?.contains("EditText") == true)) {
+                    listener.onInputFocusChanged(true)
+                }
+            }
+            AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
+                Handler(Looper.getMainLooper()).postDelayed({
+                    val hasInput = getActiveInputNode() != null
+                    listener.onInputFocusChanged(hasInput)
+                }, 300)
+            }
+        }
+    }
 
     override fun onInterrupt() {
         if (observerInstance == null) observerInstance = this

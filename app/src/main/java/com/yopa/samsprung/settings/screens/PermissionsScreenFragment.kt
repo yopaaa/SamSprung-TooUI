@@ -2,6 +2,7 @@ package com.yopa.samsprung.settings.screens
 
 import android.Manifest
 import android.content.ActivityNotFoundException
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -9,11 +10,13 @@ import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.appcompat.widget.SwitchCompat
 import androidx.fragment.app.Fragment
 import com.yopa.samsprung.AccessibilityObserver
 import com.yopa.samsprung.R
 import com.yopa.samsprung.settings.CoverPreferences
+import com.yopa.samsprung.settings.Preferences
 
 class PermissionsScreenFragment : Fragment() {
 
@@ -99,8 +102,26 @@ class PermissionsScreenFragment : Fragment() {
             } catch (_: Exception) {}
         }
 
+        val prefs = requireActivity().getSharedPreferences(Preferences.prefsValue, Context.MODE_PRIVATE)
+
         view.findViewById<View>(R.id.card_voice).setOnClickListener {
-            prefActivity?.requestVoicePermission()
+            val currentlyEnabled = prefs.getBoolean(Preferences.prefFloatingVoice, true)
+            if (currentlyEnabled) {
+                // User wants to turn it OFF
+                prefs.edit().putBoolean(Preferences.prefFloatingVoice, false).apply()
+                switchVoice.isChecked = false
+                Toast.makeText(requireContext(), "Fitur Suara / Voice Typing dimatikan", Toast.LENGTH_SHORT).show()
+            } else {
+                // User wants to turn it ON
+                if (prefActivity?.hasPermission(Manifest.permission.RECORD_AUDIO) == true) {
+                    prefs.edit().putBoolean(Preferences.prefFloatingVoice, true).apply()
+                    switchVoice.isChecked = true
+                    Toast.makeText(requireContext(), "Fitur Suara / Voice Typing diaktifkan", Toast.LENGTH_SHORT).show()
+                } else {
+                    prefActivity?.requestVoicePermission()
+                    prefs.edit().putBoolean(Preferences.prefFloatingVoice, true).apply()
+                }
+            }
         }
     }
 
@@ -112,13 +133,16 @@ class PermissionsScreenFragment : Fragment() {
     fun updatePermissionStates() {
         val context = context ?: return
         val prefActivity = activity as? CoverPreferences ?: return
+        val prefs = context.getSharedPreferences(Preferences.prefsValue, Context.MODE_PRIVATE)
 
         switchOverlay.isChecked = Settings.canDrawOverlays(context)
         switchAccessibility.isChecked = AccessibilityObserver.hasEnabledService(context)
         switchNotifications.isChecked = prefActivity.hasNotificationListener()
         switchOptimization.isChecked = prefActivity.ignoreBatteryOptimization()
         switchUsage.isChecked = prefActivity.hasUsageStatistics()
-        switchVoice.isChecked = prefActivity.hasPermission(Manifest.permission.RECORD_AUDIO)
+        val voiceEnabled = prefs.getBoolean(Preferences.prefFloatingVoice, true)
+        val hasAudioPerm = prefActivity.hasPermission(Manifest.permission.RECORD_AUDIO)
+        switchVoice.isChecked = voiceEnabled && hasAudioPerm
         switchSecureSettings.isChecked = com.yopa.samsprung.drawer.DensityHelper.hasPermission(context)
     }
 }

@@ -221,6 +221,7 @@ class AppDisplayListener : Service() {
         with (displayContext.getSystemService(WINDOW_SERVICE) as WindowManager) {
             addView(floatView, params)
             DensityHelper.setDisplayImePolicy(0, 1)
+            AccessibilityObserver.ensureServiceEnabled(displayContext)
             voiceInputManager?.destroy()
             voiceInputManager = CoverVoiceInputManager(displayContext, this).apply {
                 attachFloatingButton()

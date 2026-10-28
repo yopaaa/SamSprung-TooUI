@@ -307,7 +307,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Izin Suara / Mikrofon"
+                        android:text="Fitur Suara / Voice Typing"
                         android:textSize="16sp"
                         android:textStyle="bold"
                         android:textColor="?android:textColorPrimary" />
@@ -316,7 +316,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
-                        android:text="Digunakan untuk fitur perintah suara peluncur aplikasi."
+                        android:text="Aktifkan atau matikan tombol mikrofon mengambang di layar cover."
                         android:textSize="12sp"
                         android:textColor="?android:textColorSecondary" />
                 </LinearLayout>

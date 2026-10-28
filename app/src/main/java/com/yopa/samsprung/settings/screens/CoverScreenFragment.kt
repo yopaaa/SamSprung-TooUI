@@ -133,7 +133,7 @@ class CoverScreenFragment : Fragment() {
             prefs.edit().putBoolean(Preferences.prefFloatingVoice, isChecked).apply()
         }
         view.findViewById<View>(R.id.card_floating_voice).setOnClickListener {
-            switchFloatingVoice.toggle()
+            switchFloatingVoice.isChecked = !switchFloatingVoice.isChecked
         }
 
         // 5. Timeout SeekBar

@@ -1,43 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/floating_voice_bar_root"
+    android:id="@+id/voice_bar_root"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:background="@drawable/bg_floating_voice_bar"
     android:gravity="center_vertical"
     android:orientation="horizontal"
-    android:paddingStart="6dp"
-    android:paddingTop="4dp"
-    android:paddingEnd="6dp"
-    android:paddingBottom="4dp">
-
-    <!-- Drag Handle / Grip -->
-    <ImageView
-        android:id="@+id/bar_drag_handle"
-        android:layout_width="16dp"
-        android:layout_height="28dp"
-        android:contentDescription="@string/description_icon"
-        android:padding="2dp"
-        android:scaleType="fitCenter"
-        app:srcCompat="@drawable/ic_drag_handle_24dp"
-        app:tint="#80FFFFFF" />
+    android:paddingStart="4dp"
+    android:paddingTop="3dp"
+    android:paddingEnd="4dp"
+    android:paddingBottom="3dp">
 
     <!-- Mic Button (🎙️) -->
     <FrameLayout
         android:id="@+id/bar_button_mic"
-        android:layout_width="38dp"
-        android:layout_height="38dp"
-        android:layout_marginStart="4dp"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
         android:background="@drawable/bg_circle_button"
-        android:padding="8dp">
+        android:padding="7dp">
 
-        <ImageView
+        <androidx.appcompat.widget.AppCompatImageView
             android:id="@+id/bar_mic_icon"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:contentDescription="@string/description_icon"
             android:scaleType="fitCenter"
+            android:src="@drawable/ic_mic_24dp"
+            android:tint="#00E676"
             app:srcCompat="@drawable/ic_mic_24dp"
             app:tint="#00E676" />
     </FrameLayout>
@@ -45,38 +35,21 @@
     <!-- Backspace Button (⌫) -->
     <FrameLayout
         android:id="@+id/bar_button_backspace"
-        android:layout_width="38dp"
-        android:layout_height="38dp"
-        android:layout_marginStart="6dp"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:layout_marginStart="4dp"
         android:background="@drawable/bg_circle_button"
-        android:padding="8dp">
+        android:padding="7dp">
 
-        <ImageView
+        <androidx.appcompat.widget.AppCompatImageView
             android:id="@+id/bar_backspace_icon"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:contentDescription="@string/description_icon"
             android:scaleType="fitCenter"
+            android:src="@drawable/ic_backspace_24dp"
+            android:tint="#FFFFFF"
             app:srcCompat="@drawable/ic_backspace_24dp"
             app:tint="#FFFFFF" />
-    </FrameLayout>
-
-    <!-- Send Button (🚀) -->
-    <FrameLayout
-        android:id="@+id/bar_button_send"
-        android:layout_width="38dp"
-        android:layout_height="38dp"
-        android:layout_marginStart="6dp"
-        android:background="@drawable/bg_circle_button"
-        android:padding="8dp">
-
-        <ImageView
-            android:id="@+id/bar_send_icon"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:contentDescription="@string/description_icon"
-            android:scaleType="fitCenter"
-            app:srcCompat="@drawable/ic_send_24dp"
-            app:tint="#00E676" />
     </FrameLayout>
 </LinearLayout>
