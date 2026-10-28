@@ -17,4 +17,9 @@
         <item name="buttonStyle">@style/SlimButton</item>
         <item name="popupMenuStyle">@style/SlimPopupMenu</item>
     </style>
+
+    <style name="Theme.SecondScreen.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
 </resources>

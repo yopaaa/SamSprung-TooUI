@@ -42,6 +42,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.Fragment
+import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.navigation.NavigationView
 import com.yopa.content.ScaledContext
@@ -145,15 +146,22 @@ class CoverPreferences : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        supportActionBar?.setBackgroundDrawable(ColorDrawable(
-            MaterialColors.getColor(window.decorView, R.attr.colorSecondaryVariant)
-        ))
+        setTheme(R.style.Theme_SecondScreen_NoActionBar)
+        setContentView(R.layout.preferences_layout)
+
+        val toolbar = findViewById<MaterialToolbar>(R.id.toolbar)
+        setSupportActionBar(toolbar)
         supportActionBar?.setDisplayShowHomeEnabled(true)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.setHomeAsUpIndicator(R.drawable.ic_menu_24)
 
-        setTheme(R.style.Theme_SecondScreen)
-        setContentView(R.layout.preferences_layout)
+        toolbar.setNavigationOnClickListener {
+            if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
+                drawerLayout.closeDrawer(GravityCompat.START)
+            } else {
+                drawerLayout.openDrawer(GravityCompat.START)
+            }
+        }
 
         // Rebind notification listener component if needed
         val componentName = ComponentName(applicationContext, NotificationReceiver::class.java)

@@ -8,14 +8,32 @@
     android:layout_height="match_parent"
     android:fitsSystemWindows="true">
 
-    <!-- Main Settings Content Screen -->
-    <FrameLayout
-        android:id="@+id/container_settings"
+    <!-- Main Content Container with Toolbar -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="?android:colorBackground" />
+        android:orientation="vertical"
+        android:fitsSystemWindows="true">
 
-    <!-- Hamburger Navigation Drawer Menu -->
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="?attr/colorSecondaryVariant"
+            app:navigationIcon="@drawable/ic_menu_24"
+            app:titleTextColor="?android:textColorPrimary"
+            app:title="@string/app_name" />
+
+        <FrameLayout
+            android:id="@+id/container_settings"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:background="?android:colorBackground" />
+
+    </LinearLayout>
+
+    <!-- Hamburger Navigation Drawer Menu (Sidebar) -->
     <com.google.android.material.navigation.NavigationView
         android:id="@+id/navigation_view"
         android:layout_width="300dp"

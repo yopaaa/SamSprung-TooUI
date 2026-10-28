@@ -73,6 +73,7 @@
             android:name="android.supports_size_changes" android:value="true" />
         <activity
             android:name=".settings.CoverPreferences"
+            android:theme="@style/Theme.SecondScreen.NoActionBar"
             android:launchMode="singleTop"
             android:configChanges="orientation"
             android:exported="true">
