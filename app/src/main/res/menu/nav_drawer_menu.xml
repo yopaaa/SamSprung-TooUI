@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_permissions"
+            android:icon="@drawable/ic_fingerprint_24dp"
+            android:title="Izin &amp; Aksesibilitas" />
+        <item
+            android:id="@+id/nav_cover_screen"
+            android:icon="@drawable/ic_wallpaper_24dp"
+            android:title="Tampilan Layar Cover" />
+        <item
+            android:id="@+id/nav_apps_manager"
+            android:icon="@drawable/ic_widgets_24dp"
+            android:title="Laci &amp; Visibilitas Aplikasi" />
+        <item
+            android:id="@+id/nav_gestures"
+            android:icon="@drawable/ic_swipe_down_24dp"
+            android:title="Gestur &amp; Navigasi" />
+        <item
+            android:id="@+id/nav_about"
+            android:icon="@drawable/ic_support_required_24dp"
+            android:title="Tentang &amp; Bantuan" />
+    </group>
+</menu>

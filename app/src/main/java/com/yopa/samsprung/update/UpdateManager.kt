@@ -136,13 +136,24 @@ class UpdateManager(private var activity: AppCompatActivity) {
             val download: String = link.substringAfterLast(File.separator)
             val apk = File(activity.externalCacheDir, download)
             CoroutineScope(Dispatchers.IO).launch(Dispatchers.IO) {
-                URL(link).openStream().use { stream ->
-                    FileOutputStream(apk).use {
-                        stream.copyTo(it)
-                        installDownload(FileProvider.getUriForFile(
-                            activity.applicationContext, SamSprung.provider, apk
-                        ))
+                try {
+                    val conn = URL(link).openConnection()
+                    conn.connectTimeout = 30000
+                    conn.readTimeout = 30000
+                    conn.setRequestProperty(
+                        "User-Agent",
+                        "SamSprung-TooUI/${BuildConfig.VERSION_NAME} (Android; Linux)"
+                    )
+                    conn.getInputStream().use { stream ->
+                        FileOutputStream(apk).use { fileOut ->
+                            stream.copyTo(fileOut)
+                            installDownload(FileProvider.getUriForFile(
+                                activity.applicationContext, SamSprung.provider, apk
+                            ))
+                        }
                     }
+                } catch (e: Exception) {
+                    e.printStackTrace()
                 }
             }
         } else if (activity is CoverPreferences) {
@@ -169,6 +180,7 @@ class UpdateManager(private var activity: AppCompatActivity) {
         CoroutineScope(Dispatchers.IO).launch(Dispatchers.IO) {
             JSONExecutor(repo).setResultListener(object : JSONExecutor.ResultListener {
                 override fun onResults(result: String?) {
+                    if (result.isNullOrEmpty()) return
                     try {
                         val jsonObject = JSONTokener(result).nextValue() as JSONObject
                         val lastCommit = (jsonObject["name"] as String).substring(
@@ -179,9 +191,11 @@ class UpdateManager(private var activity: AppCompatActivity) {
                         isUpdateAvailable = BuildConfig.COMMIT != lastCommit
                         if (isUpdateAvailable) {
                             updateUrl = asset["browser_download_url"] as String
-                            updateListener?.onUpdateFound()
+                            CoroutineScope(Dispatchers.Main).launch {
+                                updateListener?.onUpdateFound()
+                            }
                         }
-                    } catch (_: JSONException) { }
+                    } catch (_: Exception) { }
                 }
                 override fun onException(e: Exception) { }
             })
