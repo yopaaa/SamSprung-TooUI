@@ -134,6 +134,53 @@ class LauncherManager(private val overlay: SamSprungOverlay) {
         })
     }
 
+    fun launchPackage(packageName: String) {
+        overlay.setKeyguardListener(object: SamSprungOverlay.KeyguardListener {
+            override fun onKeyguardCheck(unlocked: Boolean) {
+                if (!unlocked) return
+                overlay.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
+                overlay.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_BEHIND
+
+                val launchIntent = overlay.packageManager.getLaunchIntentForPackage(packageName)
+                val targetComponent = launchIntent?.component
+
+                val options = CoverOptions(null).getAnimatedOptions(
+                    1, overlay.getCoordinator(), launchIntent
+                ).toBundle()
+
+                try {
+                    if (targetComponent != null) {
+                        launcher.startMainActivity(
+                            targetComponent,
+                            Process.myUserHandle(),
+                            getLaunchBounds(),
+                            options
+                        )
+                    } else if (launchIntent != null) {
+                        launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_TASK_ON_HOME)
+                        displayContext.startActivity(launchIntent, options)
+                    }
+                } catch (e: Exception) {
+                    try {
+                        if (launchIntent != null) {
+                            launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_TASK_ON_HOME)
+                            overlay.startActivity(launchIntent, options)
+                        }
+                    } catch (e2: Exception) {
+                        android.util.Log.e("LauncherManager", "Failed to launch package $packageName: ${e2.message}", e2)
+                    }
+                }
+
+                overlay.closeMainDrawer()
+                val extras = Bundle().apply {
+                    putString("launchPackage", packageName)
+                    targetComponent?.className?.let { putString("launchActivity", it) }
+                }
+                postOrientationHandler(extras)
+            }
+        })
+    }
+
     fun launchPendingIntent(pendingIntent: PendingIntent, packageName: String? = null) {
         overlay.setKeyguardListener(object: SamSprungOverlay.KeyguardListener {
             override fun onKeyguardCheck(unlocked: Boolean) {

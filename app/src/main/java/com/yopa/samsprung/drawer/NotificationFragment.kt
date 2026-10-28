@@ -314,18 +314,7 @@ class NotificationFragment : Fragment(), NotificationAdapter.OnNoticeClickListen
     }
 
     override fun onNoticeClicked(itemView: View, position: Int, notice: StatusBarNotification) {
-        val contentIntent = notice.notification.contentIntent
-        if (contentIntent != null) {
-            launcherManager?.launchPendingIntent(contentIntent, notice.packageName)
-        } else {
-            val pkg = notice.packageName
-            val launchIntent = requireActivity().packageManager.getLaunchIntentForPackage(pkg)
-            if (launchIntent != null) {
-                launcherManager?.launchIntent(launchIntent, pkg)
-            } else {
-                onNoticeExpanded(itemView, position, notice)
-            }
-        }
+        launcherManager?.launchPackage(notice.packageName)
     }
 
     override fun onNoticeLongClicked(

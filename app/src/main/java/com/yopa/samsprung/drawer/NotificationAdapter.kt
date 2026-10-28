@@ -279,13 +279,12 @@ class NotificationAdapter(
 //            if (TextUtils.isEmpty(linesText.text) && null != notification.tickerText) {
 //                linesText.text = notification.tickerText.toString()
 //            }
-            if (null != notification.contentIntent) {
-                launch.visibility = View.VISIBLE
-                launch.setOnClickListener {
-                    listener?.onLaunchClicked(notification.contentIntent)
+            launch.visibility = View.VISIBLE
+            launch.setOnClickListener {
+                val pos = bindingAdapterPosition
+                if (pos != RecyclerView.NO_POSITION) {
+                    listener?.onNoticeClicked(itemView, pos, notice)
                 }
-            } else {
-                launch.visibility = View.GONE
             }
             dismiss.setOnClickListener {
                 dismissNotification()
