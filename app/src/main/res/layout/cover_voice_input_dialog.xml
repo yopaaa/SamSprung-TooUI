@@ -4,178 +4,92 @@
     android:id="@+id/voice_dialog_root"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_gravity="bottom|center_horizontal"
-    android:layout_margin="8dp"
+    android:layout_gravity="bottom"
+    android:layout_marginHorizontal="6dp"
+    android:layout_marginBottom="6dp"
     android:background="@drawable/bg_voice_dialog"
-    android:orientation="vertical"
-    android:padding="10dp">
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:padding="6dp">
 
-    <!-- Header: Status, Language Switch, Close Button -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
+    <!-- Mic toggle button (left) -->
+    <FrameLayout
+        android:id="@+id/voice_mic_container"
+        android:layout_width="38dp"
+        android:layout_height="38dp"
+        android:background="@drawable/bg_floating_mic"
+        android:padding="8dp">
 
         <ImageView
             android:id="@+id/voice_status_icon"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
             android:contentDescription="@string/description_icon"
+            android:scaleType="fitCenter"
             app:srcCompat="@drawable/ic_mic_24dp"
             app:tint="#FF5252" />
+    </FrameLayout>
+
+    <!-- Center: Live speech text & Status in one compact vertical stack -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="8dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
 
         <TextView
             android:id="@+id/voice_status_text"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_weight="1"
             android:ellipsize="end"
             android:maxLines="1"
             android:text="Mendengarkan..."
-            android:textColor="@android:color/white"
-            android:textSize="13sp"
+            android:textColor="#FF5252"
+            android:textSize="10sp"
             android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/voice_lang_toggle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@drawable/bg_quick_chip"
-            android:paddingStart="8dp"
-            android:paddingTop="3dp"
-            android:paddingEnd="8dp"
-            android:paddingBottom="3dp"
-            android:text="🌐 ID"
-            android:textColor="#80D8FF"
-            android:textSize="11sp"
-            android:textStyle="bold" />
-
-        <ImageView
-            android:id="@+id/voice_button_close"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:layout_marginStart="8dp"
-            android:contentDescription="@string/description_icon"
-            android:padding="2dp"
-            app:srcCompat="@drawable/ic_close_24dp"
-            app:tint="#BDBDBD" />
-    </LinearLayout>
-
-    <!-- Text Input / Transcribed Result -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:background="@drawable/bg_voice_input_box"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:padding="6dp">
 
         <EditText
             android:id="@+id/voice_text_result"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
             android:background="@android:color/transparent"
-            android:hint="Katakan pesan Anda..."
+            android:hint="Bicara sekarang..."
             android:importantForAutofill="no"
             android:inputType="textMultiLine"
-            android:maxLines="3"
-            android:minLines="1"
+            android:maxLines="2"
+            android:padding="0dp"
             android:textColor="@android:color/white"
-            android:textColorHint="#757575"
+            android:textColorHint="#888888"
             android:textSize="13sp" />
+    </LinearLayout>
+
+    <!-- Close button (X) -->
+    <ImageView
+        android:id="@+id/voice_button_close"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:contentDescription="@string/description_icon"
+        android:padding="6dp"
+        app:srcCompat="@drawable/ic_close_24dp"
+        app:tint="#9E9E9E" />
+
+    <!-- Send button (Kirim 🚀) -->
+    <FrameLayout
+        android:id="@+id/voice_button_send_container"
+        android:layout_width="38dp"
+        android:layout_height="38dp"
+        android:layout_marginStart="4dp"
+        android:background="@drawable/bg_send_button"
+        android:padding="8dp">
 
         <ImageView
-            android:id="@+id/voice_button_clear"
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:layout_marginStart="4dp"
+            android:id="@+id/voice_button_send"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
             android:contentDescription="@string/description_icon"
-            android:padding="2dp"
-            android:visibility="gone"
-            app:srcCompat="@drawable/ic_close_24dp"
-            app:tint="#9E9E9E" />
-    </LinearLayout>
-
-    <!-- Quick Replies Horizontal ScrollView -->
-    <HorizontalScrollView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
-        android:overScrollMode="never"
-        android:scrollbars="none">
-
-        <LinearLayout
-            android:id="@+id/voice_quick_replies_container"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-            <!-- Chips will be populated programmatically or dynamically -->
-        </LinearLayout>
-    </HorizontalScrollView>
-
-    <!-- Action Buttons: Re-mic, Tempel (Paste), Kirim (Send) -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
-
-        <TextView
-            android:id="@+id/voice_action_mic"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@drawable/bg_quick_chip"
-            android:drawableStart="@drawable/ic_mic_24dp"
-            android:drawablePadding="4dp"
-            android:paddingStart="8dp"
-            android:paddingTop="5dp"
-            android:paddingEnd="10dp"
-            android:paddingBottom="5dp"
-            android:text="Bicara"
-            android:textColor="@android:color/white"
-            android:textSize="12sp"
-            app:drawableTint="@android:color/white" />
-
-        <View
-            android:layout_width="0dp"
-            android:layout_height="1dp"
-            android:layout_weight="1" />
-
-        <TextView
-            android:id="@+id/voice_action_paste"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@drawable/bg_quick_chip"
-            android:paddingStart="10dp"
-            android:paddingTop="5dp"
-            android:paddingEnd="10dp"
-            android:paddingBottom="5dp"
-            android:text="📋 Tempel"
-            android:textColor="@android:color/white"
-            android:textSize="12sp" />
-
-        <TextView
-            android:id="@+id/voice_action_send"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:background="@drawable/bg_send_button"
-            android:drawableEnd="@drawable/ic_send_24dp"
-            android:drawablePadding="4dp"
-            android:paddingStart="12dp"
-            android:paddingTop="5dp"
-            android:paddingEnd="10dp"
-            android:paddingBottom="5dp"
-            android:text="Kirim"
-            android:textColor="@android:color/white"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            app:drawableTint="@android:color/white" />
-    </LinearLayout>
+            android:scaleType="fitCenter"
+            app:srcCompat="@drawable/ic_send_24dp"
+            app:tint="@android:color/white" />
+    </FrameLayout>
 </LinearLayout>

@@ -29,8 +29,6 @@ import android.os.VibratorManager
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
-import android.text.Editable
-import android.text.TextWatcher
 import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
@@ -39,10 +37,8 @@ import android.view.View
 import android.view.WindowManager
 import android.widget.EditText
 import android.widget.ImageView
-import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
-import androidx.core.view.isVisible
 import com.yopa.os.Version
 import com.yopa.samsprung.AccessibilityObserver
 import com.yopa.samsprung.BuildConfig
@@ -58,19 +54,6 @@ class CoverVoiceInputManager(
 
     companion object {
         private const val TAG = "CoverVoiceInput"
-        private const val LANG_ID = "id-ID"
-        private const val LANG_EN = "en-US"
-
-        private val DEFAULT_QUICK_REPLIES = listOf(
-            "👍 OK",
-            "Siap!",
-            "Lagi di jalan 🚗",
-            "Iya",
-            "Tidak",
-            "Nanti saya hubungi 📞",
-            "Sampai di mana?",
-            "Terima kasih 🙏"
-        )
     }
 
     private val prefs: SharedPreferences by lazy {
@@ -90,7 +73,7 @@ class CoverVoiceInputManager(
 
     private var speechRecognizer: SpeechRecognizer? = null
     private var isListening = false
-    private var currentLanguage = LANG_ID
+    private var triedFallback = false
 
     // Views
     private var floatingButtonView: View? = null
@@ -102,10 +85,7 @@ class CoverVoiceInputManager(
     // Dialog components
     private var statusIcon: ImageView? = null
     private var statusText: TextView? = null
-    private var langToggle: TextView? = null
     private var textResult: EditText? = null
-    private var buttonClear: ImageView? = null
-    private var actionMic: TextView? = null
 
     // Floating Button Position
     private var initialX = 0
@@ -192,88 +172,31 @@ class CoverVoiceInputManager(
         isFloatingAttached = false
     }
 
-    @SuppressLint("InflateParams", "SetTextI18n")
+    @SuppressLint("InflateParams")
     fun showVoiceDialog(initialText: String? = null) {
         if (isDialogShowing) return
 
         try {
+            // Hide floating button while dialog is active so screen remains completely clean
+            floatingButtonView?.visibility = View.GONE
+
             val inflater = LayoutInflater.from(context)
             val view = inflater.inflate(R.layout.cover_voice_input_dialog, null)
 
             statusIcon = view.findViewById(R.id.voice_status_icon)
             statusText = view.findViewById(R.id.voice_status_text)
-            langToggle = view.findViewById(R.id.voice_lang_toggle)
             textResult = view.findViewById(R.id.voice_text_result)
-            buttonClear = view.findViewById(R.id.voice_button_clear)
-            actionMic = view.findViewById(R.id.voice_action_mic)
 
             initialText?.let { textResult?.setText(it) }
 
-            // Lang toggle
-            updateLangDisplay()
-            langToggle?.setOnClickListener {
-                vibrateClick()
-                currentLanguage = if (currentLanguage == LANG_ID) LANG_EN else LANG_ID
-                updateLangDisplay()
-                restartListening()
-            }
-
-            // Close button
+            // Close button (X)
             view.findViewById<View>(R.id.voice_button_close).setOnClickListener {
                 vibrateClick()
                 dismissVoiceDialog()
             }
 
-            // Clear button
-            buttonClear?.setOnClickListener {
-                vibrateClick()
-                textResult?.setText("")
-            }
-
-            textResult?.addTextChangedListener(object : TextWatcher {
-                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                    buttonClear?.isVisible = !s.isNullOrEmpty()
-                }
-                override fun afterTextChanged(s: Editable?) {}
-            })
-
-            // Populate Quick Replies
-            val quickContainer = view.findViewById<LinearLayout>(R.id.voice_quick_replies_container)
-            quickContainer.removeAllViews()
-            for (reply in DEFAULT_QUICK_REPLIES) {
-                val chip = TextView(context).apply {
-                    text = reply
-                    setTextColor(Color.WHITE)
-                    textSize = 11.5f
-                    setBackgroundResource(R.drawable.bg_quick_chip)
-                    setPadding(
-                        (10 * resources.displayMetrics.density).toInt(),
-                        (5 * resources.displayMetrics.density).toInt(),
-                        (10 * resources.displayMetrics.density).toInt(),
-                        (5 * resources.displayMetrics.density).toInt()
-                    )
-                    val lp = LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.WRAP_CONTENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT
-                    ).apply {
-                        marginEnd = (6 * resources.displayMetrics.density).toInt()
-                    }
-                    layoutParams = lp
-
-                    setOnClickListener {
-                        vibrateClick()
-                        textResult?.setText(reply)
-                        // Directly insert and offer quick convenience
-                        AccessibilityObserver.insertText(reply, autoSend = false)
-                        Toast.makeText(context, "Ditempel: $reply", Toast.LENGTH_SHORT).show()
-                    }
-                }
-                quickContainer.addView(chip)
-            }
-
-            // Action: Mic Toggle
-            actionMic?.setOnClickListener {
+            // Mic container click -> Toggle listening
+            view.findViewById<View>(R.id.voice_mic_container).setOnClickListener {
                 vibrateClick()
                 if (isListening) {
                     stopListening()
@@ -282,25 +205,8 @@ class CoverVoiceInputManager(
                 }
             }
 
-            // Action: Tempel (Paste without auto-send)
-            view.findViewById<View>(R.id.voice_action_paste).setOnClickListener {
-                vibrateClick()
-                val text = textResult?.text?.toString()?.trim() ?: ""
-                if (text.isNotEmpty()) {
-                    val success = AccessibilityObserver.insertText(text, autoSend = false)
-                    Toast.makeText(
-                        context,
-                        if (success) "Teks dimasukkan!" else "Disalin ke clipboard!",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    dismissVoiceDialog()
-                } else {
-                    Toast.makeText(context, "Katakan atau ketik teks terlebih dahulu", Toast.LENGTH_SHORT).show()
-                }
-            }
-
-            // Action: Kirim (Insert and click Send)
-            view.findViewById<View>(R.id.voice_action_send).setOnClickListener {
+            // Send button -> Insert text into active chat & trigger click Send
+            view.findViewById<View>(R.id.voice_button_send_container).setOnClickListener {
                 vibrateClick()
                 val text = textResult?.text?.toString()?.trim() ?: ""
                 if (text.isNotEmpty()) {
@@ -312,7 +218,7 @@ class CoverVoiceInputManager(
                     ).show()
                     dismissVoiceDialog()
                 } else {
-                    Toast.makeText(context, "Katakan atau ketik teks terlebih dahulu", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Bicara terlebih dahulu", Toast.LENGTH_SHORT).show()
                 }
             }
 
@@ -332,6 +238,7 @@ class CoverVoiceInputManager(
             isDialogShowing = true
             Log.d(TAG, "Voice dialog shown successfully")
 
+            triedFallback = false
             startListening()
         } catch (e: Exception) {
             Log.e(TAG, "Failed to show voice dialog", e)
@@ -350,17 +257,9 @@ class CoverVoiceInputManager(
         }
         dialogView = null
         isDialogShowing = false
-    }
 
-    private fun updateLangDisplay() {
-        langToggle?.text = if (currentLanguage == LANG_ID) "🌐 ID" else "🌐 EN"
-    }
-
-    private fun restartListening() {
-        stopListening()
-        Handler(Looper.getMainLooper()).postDelayed({
-            startListening()
-        }, 200)
+        // Restore floating button
+        floatingButtonView?.visibility = View.VISIBLE
     }
 
     private fun startListening() {
@@ -377,19 +276,46 @@ class CoverVoiceInputManager(
                 putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, BuildConfig.APPLICATION_ID)
                 putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
                 putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
-                putExtra(RecognizerIntent.EXTRA_LANGUAGE, currentLanguage)
-                putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
+                // Note: Do NOT set EXTRA_PREFER_OFFLINE = true to prevent Error 13 (LANGUAGE_PACK_ERROR)
+                val localeTag = Locale.getDefault().toLanguageTag()
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE, localeTag)
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, localeTag)
             }
 
             speechRecognizer?.startListening(intent)
             isListening = true
             updateListeningUI(true)
-            statusText?.text = "Mendengarkan (${if (currentLanguage == LANG_ID) "Indonesia" else "English"})..."
-            Log.d(TAG, "SpeechRecognizer started listening with lang: $currentLanguage")
+            statusText?.text = "Mendengarkan..."
+            Log.d(TAG, "SpeechRecognizer startListening requested")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to start speech recognizer", e)
             updateListeningUI(false)
-            statusText?.text = "Gagal memulai mikrofon"
+            statusText?.text = "Gagal mengakses mikrofon"
+        }
+    }
+
+    private fun startListeningFallback() {
+        try {
+            speechRecognizer?.destroy()
+            speechRecognizer = SpeechRecognizer.createSpeechRecognizer(context.applicationContext)
+            speechRecognizer?.setRecognitionListener(createRecognitionListener())
+
+            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, BuildConfig.APPLICATION_ID)
+                putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
+                putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
+            }
+
+            speechRecognizer?.startListening(intent)
+            isListening = true
+            updateListeningUI(true)
+            statusText?.text = "Mendengarkan..."
+            Log.d(TAG, "SpeechRecognizer fallback listening started")
+        } catch (e: Exception) {
+            Log.e(TAG, "Fallback listening failed", e)
+            updateListeningUI(false)
+            statusText?.text = "Gagal memulai suara"
         }
     }
 
@@ -408,24 +334,22 @@ class CoverVoiceInputManager(
     private fun updateListeningUI(active: Boolean) {
         if (active) {
             statusIcon?.setColorFilter(Color.parseColor("#FF5252"))
-            actionMic?.text = "Berhenti"
-            actionMic?.setTextColor(Color.parseColor("#FF5252"))
+            statusText?.setTextColor(Color.parseColor("#FF5252"))
         } else {
             statusIcon?.setColorFilter(Color.WHITE)
-            actionMic?.text = "Bicara"
-            actionMic?.setTextColor(Color.WHITE)
+            statusText?.setTextColor(Color.parseColor("#4CAF50"))
         }
     }
 
     private fun createRecognitionListener(): RecognitionListener {
         return object : RecognitionListener {
             override fun onReadyForSpeech(params: Bundle?) {
-                statusText?.text = "Silakan bicara sekarang..."
+                statusText?.text = "Mendengarkan..."
                 updateListeningUI(true)
             }
 
             override fun onBeginningOfSpeech() {
-                statusText?.text = "Mendengarkan suara Anda..."
+                statusText?.text = "Mendengarkan..."
             }
 
             override fun onRmsChanged(rmsdB: Float) {}
@@ -433,22 +357,32 @@ class CoverVoiceInputManager(
             override fun onBufferReceived(buffer: ByteArray?) {}
 
             override fun onEndOfSpeech() {
-                statusText?.text = "Memproses ucapan..."
+                statusText?.text = "Memproses..."
             }
 
             override fun onError(error: Int) {
                 isListening = false
                 updateListeningUI(false)
+                Log.w(TAG, "SpeechRecognizer onError: $error")
+
+                // Error 13 = ERROR_LANGUAGE_UNAVAILABLE -> Retry with generic fallback intent once
+                if (error == 13 && !triedFallback) {
+                    triedFallback = true
+                    statusText?.text = "Mencoba ulang..."
+                    Handler(Looper.getMainLooper()).postDelayed({
+                        startListeningFallback()
+                    }, 150)
+                    return
+                }
+
                 val msg = when (error) {
-                    SpeechRecognizer.ERROR_NO_MATCH -> "Tidak ada suara terdeteksi. Ketuk 'Bicara' untuk coba lagi."
-                    SpeechRecognizer.ERROR_NETWORK -> "Koneksi offline: pastikan paket bahasa offline sudah terunduh."
-                    SpeechRecognizer.ERROR_AUDIO -> "Mikrofon tidak dapat diakses."
-                    SpeechRecognizer.ERROR_SERVER -> "Server suara tidak merespon."
-                    SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "Waktu bicara habis. Ketuk 'Bicara' untuk coba lagi."
-                    else -> "Suara tidak terdeteksi (kode $error)."
+                    SpeechRecognizer.ERROR_NO_MATCH -> "Tidak ada suara. Ketuk mic untuk bicara"
+                    SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "Waktu habis. Ketuk mic untuk bicara"
+                    SpeechRecognizer.ERROR_AUDIO -> "Mikrofon sibuk"
+                    SpeechRecognizer.ERROR_NETWORK -> "Periksa koneksi internet"
+                    else -> "Ketuk mic untuk coba lagi"
                 }
                 statusText?.text = msg
-                Log.w(TAG, "SpeechRecognizer onError: $error ($msg)")
             }
 
             override fun onResults(results: Bundle?) {
@@ -461,9 +395,9 @@ class CoverVoiceInputManager(
                     val combined = if (existing.isNotEmpty()) "$existing $spoken" else spoken
                     textResult?.setText(combined)
                     textResult?.setSelection(combined.length)
-                    statusText?.text = "Selesai (Siap dikirim)"
+                    statusText?.text = "Siap kirim (Ketuk 🚀)"
                 } else {
-                    statusText?.text = "Selesai"
+                    statusText?.text = "Siap kirim (Ketuk 🚀)"
                 }
             }
 
@@ -472,7 +406,6 @@ class CoverVoiceInputManager(
                 if (!data.isNullOrEmpty()) {
                     val partial = data[0]
                     val existing = textResult?.text?.toString() ?: ""
-                    // Only display preview if empty
                     if (existing.isEmpty() || existing == partial) {
                         textResult?.setText(partial)
                         textResult?.setSelection(partial.length)

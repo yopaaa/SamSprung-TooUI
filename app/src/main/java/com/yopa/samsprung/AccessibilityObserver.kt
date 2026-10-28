@@ -102,20 +102,28 @@ class AccessibilityObserver : AccessibilityService() {
             Log.d(TAG, "insertText ACTION_SET_TEXT result: $setSuccess")
 
             if (autoSend) {
-                Handler(Looper.getMainLooper()).postDelayed({
-                    try {
-                        val freshRoot = inst.rootInActiveWindow ?: root
-                        val sendBtn = findSendButton(freshRoot)
-                        if (sendBtn != null) {
-                            val clicked = sendBtn.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-                            Log.d(TAG, "autoSend click on send button result: $clicked")
-                        } else {
-                            Log.w(TAG, "Send button not found for autoSend")
+                val handler = Handler(Looper.getMainLooper())
+                var attempts = 0
+                val checkAndSend = object : Runnable {
+                    override fun run() {
+                        attempts++
+                        try {
+                            val freshRoot = inst.rootInActiveWindow ?: root
+                            val sendBtn = findSendButton(freshRoot)
+                            if (sendBtn != null) {
+                                val clicked = sendBtn.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+                                Log.d(TAG, "autoSend click on send button result: $clicked (attempt $attempts)")
+                                if (clicked) return
+                            }
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Error clicking send button", e)
                         }
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Error clicking send button", e)
+                        if (attempts < 5) {
+                            handler.postDelayed(this, 200)
+                        }
                     }
-                }, 250)
+                }
+                handler.postDelayed(checkAndSend, 150)
             }
             return setSuccess
         }
@@ -147,11 +155,13 @@ class AccessibilityObserver : AccessibilityService() {
             val text = node.text?.toString()?.lowercase() ?: ""
             val viewId = node.viewIdResourceName?.lowercase() ?: ""
 
-            if (viewId.endsWith(":id/send") ||
-                viewId.endsWith(":id/button_send") ||
-                desc == "send" || desc == "kirim" ||
-                text == "send" || text == "kirim"
-            ) {
+            val isNotAudio = !desc.contains("audio") && !desc.contains("suara") && !desc.contains("voice")
+            val isSendMatch = viewId.endsWith(":id/send") ||
+                    viewId.endsWith(":id/button_send") ||
+                    desc.contains("kirim") || desc.contains("send") ||
+                    text == "send" || text == "kirim"
+
+            if (isNotAudio && isSendMatch) {
                 if (node.isClickable) return node
             }
             for (i in 0 until node.childCount) {
