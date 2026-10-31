@@ -16,10 +16,13 @@ package com.yopa.samsprung
 
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.AccessibilityServiceInfo
+import android.accessibilityservice.GestureDescription
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.graphics.Path
+import android.graphics.Rect
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -88,6 +91,62 @@ class AccessibilityObserver : AccessibilityService() {
             val expected = "${context.packageName}${File.separator}${AccessibilityObserver::class.java.name}"
             val expectedShort = "${context.packageName}/.AccessibilityObserver"
             return serviceString.contains(expected) || serviceString.contains(expectedShort)
+        }
+
+        private var isExecutingRecentsAction = false
+        private var isCloseAllRequested = false
+        private var targetLabelToClose: String? = null
+
+        fun closeAllRecentTasks(): Boolean {
+            val inst = getInstance() ?: return false
+            Log.d(TAG, "closeAllRecentTasks() requested")
+            isCloseAllRequested = true
+            targetLabelToClose = null
+            isExecutingRecentsAction = true
+
+            inst.performGlobalAction(GLOBAL_ACTION_RECENTS)
+
+            val handler = Handler(Looper.getMainLooper())
+            handler.postDelayed({ inst.checkAndExecuteRecentsAction() }, 150)
+            handler.postDelayed({ inst.checkAndExecuteRecentsAction() }, 300)
+            handler.postDelayed({ inst.checkAndExecuteRecentsAction() }, 500)
+
+            handler.postDelayed({
+                if (isExecutingRecentsAction) {
+                    Log.w(TAG, "closeAllRecentTasks timed out, dismissing recents")
+                    isExecutingRecentsAction = false
+                    isCloseAllRequested = false
+                    inst.performGlobalAction(GLOBAL_ACTION_BACK)
+                }
+            }, 1200)
+
+            return true
+        }
+
+        fun closeSingleRecentTask(label: String): Boolean {
+            val inst = getInstance() ?: return false
+            Log.d(TAG, "closeSingleRecentTask() requested for: $label")
+            isCloseAllRequested = false
+            targetLabelToClose = label
+            isExecutingRecentsAction = true
+
+            inst.performGlobalAction(GLOBAL_ACTION_RECENTS)
+
+            val handler = Handler(Looper.getMainLooper())
+            handler.postDelayed({ inst.checkAndExecuteRecentsAction() }, 150)
+            handler.postDelayed({ inst.checkAndExecuteRecentsAction() }, 300)
+            handler.postDelayed({ inst.checkAndExecuteRecentsAction() }, 500)
+
+            handler.postDelayed({
+                if (isExecutingRecentsAction) {
+                    Log.w(TAG, "closeSingleRecentTask timed out for $label, dismissing recents")
+                    isExecutingRecentsAction = false
+                    targetLabelToClose = null
+                    inst.performGlobalAction(GLOBAL_ACTION_BACK)
+                }
+            }, 1200)
+
+            return true
         }
 
         fun performBackAction(): Boolean {
@@ -467,6 +526,87 @@ class AccessibilityObserver : AccessibilityService() {
         }
     }
 
+    private fun findRecentsRoot(): AccessibilityNodeInfo? {
+        try {
+            for (window in windows) {
+                val root = window.root
+                if (root?.packageName == "com.sec.android.app.launcher") {
+                    return root
+                }
+            }
+        } catch (_: Exception) {}
+        val active = rootInActiveWindow
+        if (active?.packageName == "com.sec.android.app.launcher") {
+            return active
+        }
+        return active
+    }
+
+    private fun checkAndExecuteRecentsAction() {
+        if (!isExecutingRecentsAction) return
+
+        val root = findRecentsRoot() ?: return
+
+        if (isCloseAllRequested) {
+            val clearButtons = root.findAccessibilityNodeInfosByViewId("com.sec.android.app.launcher:id/clear_all")
+            if (!clearButtons.isNullOrEmpty()) {
+                clearButtons[0].performAction(AccessibilityNodeInfo.ACTION_CLICK)
+                Log.d(TAG, "Successfully clicked clear_all button in system recents")
+                isExecutingRecentsAction = false
+                isCloseAllRequested = false
+                return
+            }
+
+            // Fallback by text
+            val byText = root.findAccessibilityNodeInfosByText("Tutup semua")
+                ?: root.findAccessibilityNodeInfosByText("Close all")
+            if (!byText.isNullOrEmpty()) {
+                byText[0].performAction(AccessibilityNodeInfo.ACTION_CLICK)
+                Log.d(TAG, "Successfully clicked clear_all by text in system recents")
+                isExecutingRecentsAction = false
+                isCloseAllRequested = false
+                return
+            }
+        } else if (targetLabelToClose != null) {
+            val target = targetLabelToClose ?: return
+            val tasks = root.findAccessibilityNodeInfosByViewId("com.sec.android.app.launcher:id/taskView")
+            if (!tasks.isNullOrEmpty()) {
+                for (task in tasks) {
+                    val desc = task.contentDescription?.toString() ?: ""
+                    if (desc.contains(target, ignoreCase = true)) {
+                        val hasDismiss = task.actionList.any {
+                            it.id == AccessibilityNodeInfo.AccessibilityAction.ACTION_DISMISS.id
+                        }
+                        if (hasDismiss) {
+                            task.performAction(AccessibilityNodeInfo.AccessibilityAction.ACTION_DISMISS.id)
+                            Log.d(TAG, "Dismissed task using ACTION_DISMISS: $desc")
+                        } else {
+                            val rect = Rect()
+                            task.getBoundsInScreen(rect)
+                            val startX = rect.centerX().toFloat()
+                            val startY = rect.centerY().toFloat()
+                            val path = Path().apply {
+                                moveTo(startX, startY)
+                                lineTo(startX, startY - 700f)
+                            }
+                            val gesture = GestureDescription.Builder()
+                                .addStroke(GestureDescription.StrokeDescription(path, 0, 150))
+                                .build()
+                            dispatchGesture(gesture, null, null)
+                            Log.d(TAG, "Dismissed task using swipe gesture: $desc")
+                        }
+                        isExecutingRecentsAction = false
+                        targetLabelToClose = null
+                        Handler(Looper.getMainLooper()).postDelayed({
+                            performGlobalAction(GLOBAL_ACTION_BACK)
+                        }, 300)
+                        return
+                    }
+                }
+            }
+        }
+    }
+
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
         when (event.eventType) {
             AccessibilityEvent.TYPE_VIEW_CLICKED,
@@ -485,6 +625,10 @@ class AccessibilityObserver : AccessibilityService() {
             if (isEditable) {
                 cachedInputNode = src
             }
+        }
+
+        if (isExecutingRecentsAction) {
+            checkAndExecuteRecentsAction()
         }
 
         val listener = inputFocusListener ?: return

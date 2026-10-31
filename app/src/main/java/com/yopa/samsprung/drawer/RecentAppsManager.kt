@@ -180,6 +180,14 @@ object RecentAppsManager {
 
     @Synchronized
     fun closeApp(context: Context, packageName: String) {
+        val appLabel = try {
+            val pm = context.packageManager
+            val info = pm.getApplicationInfo(packageName, 0)
+            pm.getApplicationLabel(info).toString()
+        } catch (_: Exception) {
+            null
+        }
+
         ensureLoaded(context)
         recentList.removeAll { it.first == packageName }
         save(context)
@@ -190,6 +198,10 @@ object RecentAppsManager {
             Log.d(TAG, "killBackgroundProcesses called for $packageName")
         } catch (e: Exception) {
             Log.w(TAG, "Failed to kill background process for $packageName", e)
+        }
+
+        if (appLabel != null) {
+            com.yopa.samsprung.AccessibilityObserver.closeSingleRecentTask(appLabel)
         }
 
         notifyChanged()
@@ -206,6 +218,9 @@ object RecentAppsManager {
         }
         recentList.clear()
         save(context)
+
+        com.yopa.samsprung.AccessibilityObserver.closeAllRecentTasks()
+
         notifyChanged()
     }
 }

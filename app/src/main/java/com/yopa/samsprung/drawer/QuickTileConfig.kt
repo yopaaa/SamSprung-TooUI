@@ -55,6 +55,13 @@ object QuickTileRegistry {
             iconRes = R.drawable.ic_flashlight_on_24dp,
             prefKey = Preferences.prefQuickTorch
         ),
+        "close_all" to QuickTileData(
+            id = "close_all",
+            title = "Tutup Semua Aplikasi",
+            description = "Pintasan menutup semua aplikasi yang berjalan dan membersihkan memori",
+            iconRes = R.drawable.ic_delete_forever_24dp,
+            prefKey = Preferences.prefQuickCloseAll
+        ),
         "airplane" to QuickTileData(
             id = "airplane",
             title = "Mode Pesawat",

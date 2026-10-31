@@ -87,6 +87,7 @@
     <string name="toggle_sound">Toggle Sound</string>
     <string name="toggle_dnd">Toggle DnD</string>
     <string name="toggle_torch">Toggle Torch</string>
+    <string name="toggle_close_all">Toggle Close All</string>
     <string name="toggle_widgets">Toggle Widgets</string>
     <string name="color_theme">Menu Accent Color</string>
 

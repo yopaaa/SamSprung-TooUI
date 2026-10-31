@@ -31,7 +31,7 @@ object Preferences {
 
     // Quick Settings Toggles & Order
     const val prefQuickTilesOrder: String = "pref_quick_tiles_order"
-    const val DEFAULT_QUICK_TILES_ORDER = "wifi,bluetooth,mobile_data,sound,rotation,torch,airplane,hotspot,dnd,nfc,device_care,auth"
+    const val DEFAULT_QUICK_TILES_ORDER = "wifi,bluetooth,mobile_data,sound,rotation,torch,close_all,airplane,hotspot,dnd,nfc,device_care,auth"
 
     const val prefQuickWifi: String = "toggle_wifi"
     const val prefQuickBluetooth: String = "toggle_bluetooth"
@@ -39,6 +39,7 @@ object Preferences {
     const val prefQuickSound: String = "toggle_sound"
     const val prefQuickRotation: String = "toggle_rotation"
     const val prefQuickTorch: String = "toggle_torch"
+    const val prefQuickCloseAll: String = "toggle_close_all"
     const val prefQuickAirplane: String = "toggle_airplane"
     const val prefQuickHotspot: String = "toggle_hotspot"
     const val prefQuickDnd: String = "toggle_dnd"

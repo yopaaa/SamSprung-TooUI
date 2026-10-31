@@ -83,6 +83,7 @@ import com.yopa.samsprung.drawer.LauncherManager
 import com.yopa.samsprung.drawer.PanelWidgetManager
 import com.yopa.samsprung.drawer.QuickTileData
 import com.yopa.samsprung.drawer.QuickTileRegistry
+import com.yopa.samsprung.drawer.RecentAppsManager
 import com.yopa.samsprung.drawer.TileUIState
 import com.yopa.samsprung.drawer.panels.*
 import com.yopa.samsprung.settings.Preferences
@@ -622,6 +623,13 @@ class SamSprungOverlay : AppCompatActivity() {
                     label = "Senter"
                 )
             }
+            "close_all" -> {
+                TileUIState(
+                    isActive = false,
+                    iconRes = R.drawable.ic_delete_forever_24dp,
+                    label = "Tutup App"
+                )
+            }
             "airplane" -> {
                 val isAirplaneOn = Settings.Global.getInt(contentResolver, Settings.Global.AIRPLANE_MODE_ON, 0) != 0
                 TileUIState(
@@ -750,6 +758,10 @@ class SamSprungOverlay : AppCompatActivity() {
                 try {
                     camManager.setTorchMode(camManager.cameraIdList[0], !isTorchEnabled)
                 } catch (_: Exception) {}
+            }
+            "close_all" -> {
+                RecentAppsManager.closeAll(this)
+                hideTopQuickPanel()
             }
             "airplane" -> {
                 val intent = Intent(Settings.ACTION_AIRPLANE_MODE_SETTINGS)
