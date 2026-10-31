@@ -96,6 +96,10 @@ class AppDisplayListener : Service() {
         var componentName: ComponentName? = if (null == launchActivity && null != launchPackage)
             packageManager.getLaunchIntentForPackage(launchPackage)?.component else null
 
+        launchPackage?.let { pkg ->
+            RecentAppsManager.addRecentApp(this, pkg, launchActivity)
+        }
+
         CoverScreenTimeoutManager.userActivity("app_start")
 
 //        val pendingIntent: ByteArray? = intent.getByteArrayExtra("pendingIntent")

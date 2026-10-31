@@ -420,7 +420,7 @@ class SamSprungOverlay : AppCompatActivity() {
         if (prefs.getBoolean(getString(R.string.toggle_widgets).toPref, true)) {
             toolbar.findViewById<View>(R.id.toggle_widgets)
                 .setOnLongClickListener(View.OnLongClickListener {
-                if (viewPager.currentItem > 2) {
+                if (viewPager.currentItem > 3) {
                     toolbar.menu.findItem(R.id.toggle_widgets)
                         .setIcon(R.drawable.ic_delete_forever_24dp)
                     if (prefs.getBoolean(Preferences.prefReacts, true))

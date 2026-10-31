@@ -124,4 +124,10 @@
     <!-- Text to show user in place of a widget when we can't display it properly -->
     <string name="gadget_error_text">Problem loading widget</string>
     <string name="widget_error">Widget unavailable!</string>
+
+    <string name="recent_apps_title">Aplikasi Berjalan</string>
+    <string name="recent_apps_empty">Tidak ada aplikasi aktif</string>
+    <string name="recent_apps_close_all">Tutup Semua</string>
+    <string name="recent_apps_close_app">Tutup</string>
+    <string name="recent_apps_status_active">• Aktif</string>
 </resources>

@@ -31,6 +31,10 @@ class LauncherManager(private val overlay: SamSprungOverlay) {
         Preferences.prefsValue, AppCompatActivity.MODE_PRIVATE)
 
     private fun postOrientationHandler(extras: Bundle) {
+        extras.getString("launchPackage")?.let { pkg ->
+            RecentAppsManager.addRecentApp(overlay, pkg, extras.getString("launchActivity"))
+        }
+
         val mode = prefs.getString(Preferences.prefAppOrientationMode, null)
         val lockPortrait = when (mode) {
             Preferences.ORIENTATION_MODE_PORTRAIT -> true
