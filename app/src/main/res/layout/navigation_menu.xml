@@ -38,26 +38,8 @@
             android:orientation="horizontal">
 
             <androidx.appcompat.widget.AppCompatImageView
-                android:id="@+id/retract_drawer"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                app:srcCompat="@drawable/ic_swipe_down_24dp"
-                android:scaleType="fitCenter"
-                android:layout_weight="1"
-                android:contentDescription="@string/description_icon"/>
-
-            <androidx.appcompat.widget.AppCompatImageView
-                android:id="@+id/button_recent"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                app:srcCompat="@drawable/ic_samsprung_24dp"
-                android:scaleType="fitCenter"
-                android:layout_weight="1"
-                android:contentDescription="@string/description_icon"/>
-
-            <androidx.appcompat.widget.AppCompatImageView
                 android:id="@+id/button_voice"
-                android:layout_width="match_parent"
+                android:layout_width="0dp"
                 android:layout_height="match_parent"
                 app:srcCompat="@drawable/ic_mic_24dp"
                 android:scaleType="fitCenter"
@@ -66,7 +48,7 @@
 
             <androidx.appcompat.widget.AppCompatImageView
                 android:id="@+id/button_home"
-                android:layout_width="match_parent"
+                android:layout_width="0dp"
                 android:layout_height="match_parent"
                 app:srcCompat="@drawable/ic_home_24dp"
                 android:scaleType="fitCenter"
@@ -75,7 +57,7 @@
 
             <androidx.appcompat.widget.AppCompatImageView
                 android:id="@+id/button_back"
-                android:layout_width="match_parent"
+                android:layout_width="0dp"
                 android:layout_height="match_parent"
                 app:srcCompat="@drawable/ic_arrow_back_24dp"
                 android:scaleType="fitCenter"

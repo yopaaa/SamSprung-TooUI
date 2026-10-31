@@ -56,6 +56,24 @@ class AppDisplayListener : Service() {
     private var edgeGestureManager: EdgeBackGestureManager? = null
     private var voiceInputManager: CoverVoiceInputManager? = null
 
+    private val prefListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (key == Preferences.prefFloatingVoice) {
+            Handler(Looper.getMainLooper()).post {
+                updateVoiceButtonVisibility()
+            }
+        }
+    }
+
+    private fun updateVoiceButtonVisibility() {
+        if (!::floatView.isInitialized) return
+        val voiceEnabled = prefs.getBoolean(Preferences.prefFloatingVoice, true)
+        floatView.findViewById<ImageView>(R.id.button_voice)?.apply {
+            visibility = if (voiceEnabled) View.VISIBLE else View.INVISIBLE
+            isEnabled = voiceEnabled
+            isClickable = voiceEnabled
+        }
+    }
+
     private val vibrator by lazy {
         if (Version.isSnowCone)
            with (getSystemService(VIBRATOR_MANAGER_SERVICE) as VibratorManager) { defaultVibrator }
@@ -170,10 +188,12 @@ class AppDisplayListener : Service() {
         floatView.keepScreenOn = true
 
         val icons = floatView.findViewById<LinearLayout>(R.id.icons_layout)
-        val menuClose = icons.findViewById<AppCompatImageView>(R.id.retract_drawer)
 
         icons.findViewById<ImageView>(R.id.button_back).isVisible =
             AccessibilityObserver.hasEnabledService(this)
+
+        prefs.registerOnSharedPreferenceChangeListener(prefListener)
+        updateVoiceButtonVisibility()
 
         bottomSheetBehavior = BottomSheetBehavior.from(floatView.findViewById(R.id.bottom_sheet_nav)!!)
         bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
@@ -184,10 +204,10 @@ class AppDisplayListener : Service() {
                         Preferences.prefColors,
                         Color.rgb(255, 255, 255))
                     icons.isVisible = true
+                    updateVoiceButtonVisibility()
                     for (i in 0 until icons.childCount) {
-                        (icons.getChildAt(i) as AppCompatImageView).setColorFilter(color)
+                        (icons.getChildAt(i) as? AppCompatImageView)?.setColorFilter(color)
                     }
-                    menuClose.setColorFilter(color)
                     setClickListeners(icons, componentName, launchPackage, launchActivity)
                 } else if (newState == BottomSheetBehavior.STATE_COLLAPSED) {
                     icons.isVisible = false
@@ -202,9 +222,8 @@ class AppDisplayListener : Service() {
             Color.rgb(255, 255, 255))
         icons.isVisible = true
         for (i in 0 until icons.childCount) {
-            (icons.getChildAt(i) as AppCompatImageView).setColorFilter(color)
+            (icons.getChildAt(i) as? AppCompatImageView)?.setColorFilter(color)
         }
-        menuClose.setColorFilter(color)
         setClickListeners(icons, componentName, launchPackage, launchActivity)
 
         floatView.findViewById<View>(R.id.bottom_sheet_nav).setOnTouchListener(
@@ -340,35 +359,22 @@ class AppDisplayListener : Service() {
     private fun setClickListeners(
         menu: LinearLayout, componentName: ComponentName?,
         launchPackage: String?, launchActivity: String?) {
-        menu.findViewById<AppCompatImageView>(R.id.retract_drawer).setOnClickListener {
+        menu.findViewById<ImageView>(R.id.button_voice)?.setOnClickListener {
             if (prefs.getBoolean(Preferences.prefReacts, true))
                 vibrator.vibrate(effectClick)
-            bottomSheetBehavior.state = BottomSheetBehavior.STATE_COLLAPSED
-        }
-        menu.findViewById<ImageView>(R.id.button_voice).setOnClickListener {
-            if (prefs.getBoolean(Preferences.prefReacts, true))
-                vibrator.vibrate(effectClick)
+            CoverScreenTimeoutManager.userActivity("nav_voice")
             voiceInputManager?.showVoiceDialog()
         }
-        menu.findViewById<ImageView>(R.id.button_recent).setOnClickListener {
+        menu.findViewById<ImageView>(R.id.button_home)?.setOnClickListener {
             if (prefs.getBoolean(Preferences.prefReacts, true))
                 vibrator.vibrate(effectClick)
-            componentName?.let {
-                resetRecentActivities(it, 1)
-            } ?: resetRecentActivities(launchPackage, launchActivity, 1)
-            onDismissOverlay()
-            startForegroundService(Intent(
-                applicationContext, OnBroadcastService::class.java
-            ).setAction(SamSprung.launcher))
-        }
-        menu.findViewById<ImageView>(R.id.button_home).setOnClickListener {
-            if (prefs.getBoolean(Preferences.prefReacts, true))
-                vibrator.vibrate(effectClick)
+            CoverScreenTimeoutManager.userActivity("nav_home")
             returnToHome(componentName, launchPackage, launchActivity)
         }
-        menu.findViewById<ImageView>(R.id.button_back).setOnClickListener {
+        menu.findViewById<ImageView>(R.id.button_back)?.setOnClickListener {
             if (prefs.getBoolean(Preferences.prefReacts, true))
                 vibrator.vibrate(effectClick)
+            CoverScreenTimeoutManager.userActivity("nav_back")
             val handled = AccessibilityObserver.performBackAction()
             if (!handled) {
                 returnToHome(componentName, launchPackage, launchActivity)
@@ -415,6 +421,7 @@ class AppDisplayListener : Service() {
     }
 
     fun onDismissOverlay() {
+        try { prefs.unregisterOnSharedPreferenceChangeListener(prefListener) } catch (_: Exception) {}
         voiceInputManager?.destroy()
         voiceInputManager = null
         edgeGestureManager?.detach()

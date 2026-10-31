@@ -3,6 +3,8 @@
 
 local.properties
 keystore.properties
+*.jks
+*.keystore
 *.iml
 
 .cxx

@@ -8,5 +8,5 @@ dependencyResolutionManagement {
         }
     }
 }
-rootProject.name = "SamSprung"
+rootProject.name = "TwoUI"
 include ':app'
