@@ -37,6 +37,7 @@ object CoverScreenTimeoutManager {
     private var appContext: Context? = null
     private var isInitialized = false
     private var lastActivityTime = 0L
+    private var isTimerScheduled = false
 
     private val unavailableCameras = Collections.synchronizedSet(mutableSetOf<String>())
     private val torchCameras = Collections.synchronizedSet(mutableSetOf<String>())
@@ -120,8 +121,10 @@ object CoverScreenTimeoutManager {
                                 resetTimer()
                             }
                         } else {
-                            Log.d(TAG, "Cover display turned OFF. Cancelling timeout.")
-                            cancel()
+                            if (isTimerScheduled) {
+                                Log.d(TAG, "Cover display turned OFF. Cancelling timeout.")
+                                cancel()
+                            }
                         }
                     }
                 }
@@ -230,19 +233,26 @@ object CoverScreenTimeoutManager {
     fun resetTimer() {
         val ctx = appContext ?: return
         handler.removeCallbacks(timeoutRunnable)
+        isTimerScheduled = false
 
         val timeoutSeconds = Preferences.getCoverTimeoutSeconds(ctx)
         if (timeoutSeconds <= 0) return
 
         Log.d(TAG, "resetTimer: scheduling lock in $timeoutSeconds seconds")
+        isTimerScheduled = true
         handler.postDelayed(timeoutRunnable, timeoutSeconds * 1000L)
     }
 
     fun cancel() {
-        handler.removeCallbacks(timeoutRunnable)
+        if (isTimerScheduled) {
+            handler.removeCallbacks(timeoutRunnable)
+            isTimerScheduled = false
+            Log.d(TAG, "cancel: timeout cancelled")
+        }
     }
 
     private fun onTimeoutExpired() {
+        isTimerScheduled = false
         if (!isCoverScreenActive()) {
             Log.d(TAG, "onTimeoutExpired: Cover screen is not active, skipping lock.")
             return
