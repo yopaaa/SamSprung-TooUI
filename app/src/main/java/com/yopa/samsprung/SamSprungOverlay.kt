@@ -1398,6 +1398,7 @@ class SamSprungOverlay : AppCompatActivity() {
             controller.hide(WindowInsetsCompat.Type.systemBars())
         }
         updateQuickTilesState()
+        com.yopa.samsprung.drawer.CoverScreenTimeoutManager.setCurrentForegroundPackage(packageName)
         com.yopa.samsprung.drawer.CoverScreenTimeoutManager.userActivity("overlay_resume")
     }
 

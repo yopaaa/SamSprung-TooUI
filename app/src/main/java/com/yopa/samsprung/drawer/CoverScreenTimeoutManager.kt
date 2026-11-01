@@ -18,7 +18,9 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.hardware.camera2.CameraManager
 import android.hardware.display.DisplayManager
+import android.media.AudioManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -27,6 +29,7 @@ import android.util.Log
 import android.view.Display
 import com.yopa.samsprung.AccessibilityObserver
 import com.yopa.samsprung.settings.Preferences
+import java.util.Collections
 
 object CoverScreenTimeoutManager {
     private const val TAG = "CoverTimeoutManager"
@@ -34,6 +37,35 @@ object CoverScreenTimeoutManager {
     private var appContext: Context? = null
     private var isInitialized = false
     private var lastActivityTime = 0L
+
+    private val unavailableCameras = Collections.synchronizedSet(mutableSetOf<String>())
+    private val torchCameras = Collections.synchronizedSet(mutableSetOf<String>())
+    private var cameraManager: CameraManager? = null
+    private var audioManager: AudioManager? = null
+    private var currentForegroundPackage: String? = null
+
+    private val cameraCallback = object : CameraManager.AvailabilityCallback() {
+        override fun onCameraAvailable(cameraId: String) {
+            unavailableCameras.remove(cameraId)
+            Log.d(TAG, "Camera $cameraId available. In-use cameras: $unavailableCameras")
+        }
+
+        override fun onCameraUnavailable(cameraId: String) {
+            unavailableCameras.add(cameraId)
+            Log.d(TAG, "Camera $cameraId in use. In-use cameras: $unavailableCameras")
+            userActivity("camera_busy")
+        }
+    }
+
+    private val torchCallback = object : CameraManager.TorchCallback() {
+        override fun onTorchModeChanged(cameraId: String, enabled: Boolean) {
+            if (enabled) {
+                torchCameras.add(cameraId)
+            } else {
+                torchCameras.remove(cameraId)
+            }
+        }
+    }
 
     private val timeoutRunnable = Runnable {
         onTimeoutExpired()
@@ -110,6 +142,17 @@ object CoverScreenTimeoutManager {
             ctx.registerReceiver(screenReceiver, filter)
         }
 
+        // 3. Register camera availability callback and audio manager for Smart Keep-Alive
+        audioManager = ctx.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
+        cameraManager = ctx.getSystemService(Context.CAMERA_SERVICE) as? CameraManager
+        try {
+            cameraManager?.registerAvailabilityCallback(cameraCallback, handler)
+            cameraManager?.registerTorchCallback(torchCallback, handler)
+            Log.d(TAG, "Registered camera availability & torch callbacks")
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to register camera callbacks", e)
+        }
+
         if (isCoverScreenActive()) {
             resetTimer()
         }
@@ -127,6 +170,46 @@ object CoverScreenTimeoutManager {
         }
         // Cover display must be present and currently ON
         return coverDisplay != null && coverDisplay.state == Display.STATE_ON
+    }
+
+    fun setCurrentForegroundPackage(packageName: String?) {
+        currentForegroundPackage = packageName
+        Log.d(TAG, "setCurrentForegroundPackage: $packageName")
+        if (packageName != null) {
+            userActivity("app_switch")
+        }
+    }
+
+    fun isCameraActive(): Boolean {
+        // 1. Any camera sensor is active/unavailable (excluding pure torch)
+        val hasActiveSensor = unavailableCameras.any { !torchCameras.contains(it) }
+        if (hasActiveSensor) return true
+
+        // 2. The active app on cover display is a camera application
+        val pkg = currentForegroundPackage
+        if (pkg != null && (pkg.contains("camera", ignoreCase = true) || pkg == "com.sec.android.app.camera")) {
+            return true
+        }
+
+        return false
+    }
+
+    fun isMediaActive(): Boolean {
+        val isAudioPlaying = try {
+            audioManager?.isMusicActive == true
+        } catch (_: Exception) {
+            false
+        }
+        if (!isAudioPlaying) return false
+
+        // If audio is playing in background while user is just on the cover launcher,
+        // let the screen timeout normally to avoid draining battery.
+        val pkg = currentForegroundPackage ?: return false
+        val isLauncher = pkg == appContext?.packageName || pkg.contains("launcher")
+        if (isLauncher) return false
+
+        // Audio is actively playing and a foreground app is open on the cover display
+        return true
     }
 
     fun userActivity(source: String = "touch") {
@@ -165,6 +248,20 @@ object CoverScreenTimeoutManager {
             return
         }
         val ctx = appContext ?: return
+
+        // Smart Keep-Alive: Keep screen on while camera is active or media is playing
+        if (isCameraActive()) {
+            Log.d(TAG, "onTimeoutExpired: Camera is actively in use. Extending cover screen awake time.")
+            resetTimer()
+            return
+        }
+
+        if (isMediaActive()) {
+            Log.d(TAG, "onTimeoutExpired: Media/Audio is actively playing. Extending cover screen awake time.")
+            resetTimer()
+            return
+        }
+
         val timeoutSeconds = Preferences.getCoverTimeoutSeconds(ctx)
         Log.d(TAG, "onTimeoutExpired: Cover screen inactivity timeout ($timeoutSeconds s) reached. Locking device.")
         val success = AccessibilityObserver.performLockAction()

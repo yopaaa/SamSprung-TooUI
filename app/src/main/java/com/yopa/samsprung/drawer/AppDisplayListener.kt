@@ -97,6 +97,7 @@ class AppDisplayListener : Service() {
             packageManager.getLaunchIntentForPackage(launchPackage)?.component else null
 
         launchPackage?.let { pkg ->
+            CoverScreenTimeoutManager.setCurrentForegroundPackage(pkg)
             RecentAppsManager.addRecentApp(this, pkg, launchActivity)
         }
 
@@ -451,6 +452,7 @@ class AppDisplayListener : Service() {
             }
         }
         stopForeground(STOP_FOREGROUND_REMOVE)
+        CoverScreenTimeoutManager.setCurrentForegroundPackage(null)
         stopSelf()
     }
 

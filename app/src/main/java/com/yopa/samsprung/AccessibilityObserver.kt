@@ -615,6 +615,12 @@ class AccessibilityObserver : AccessibilityService() {
             AccessibilityEvent.TYPE_VIEW_SELECTED -> {
                 com.yopa.samsprung.drawer.CoverScreenTimeoutManager.userActivity("a11y_interaction")
             }
+            AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
+                val pkg = event.packageName?.toString()
+                if (pkg != null && pkg != packageName && !pkg.startsWith("com.android.systemui")) {
+                    com.yopa.samsprung.drawer.CoverScreenTimeoutManager.setCurrentForegroundPackage(pkg)
+                }
+            }
         }
 
         val src = try { event.source } catch (_: Exception) { null }
