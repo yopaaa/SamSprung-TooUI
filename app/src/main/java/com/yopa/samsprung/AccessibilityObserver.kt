@@ -23,12 +23,15 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Path
 import android.graphics.Rect
+import android.hardware.display.DisplayManager
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
+import android.util.DisplayMetrics
 import android.util.Log
+import android.view.Surface
 import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
@@ -56,6 +59,52 @@ class AccessibilityObserver : AccessibilityService() {
             return observerInstance
         }
 
+        fun clickNodeAt(x: Float, y: Float, displayId: Int = 1): Boolean {
+            val service = observerInstance ?: return false
+            try {
+                val targetWindows = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    try { service.windows.filter { it.displayId == displayId } } catch (_: Exception) { emptyList() }
+                } else emptyList()
+
+                for (window in targetWindows) {
+                    val root = try { window.root } catch (_: Exception) { null } ?: continue
+                    if (root.packageName?.toString() == service.packageName) continue
+                    val node = findClickableNode(root, x, y)
+                    if (node != null) {
+                        var targetNode: AccessibilityNodeInfo? = node
+                        while (targetNode != null && !targetNode.isClickable) {
+                            targetNode = targetNode.parent
+                        }
+                        if (targetNode != null && targetNode.isClickable) {
+                            val success = targetNode.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+                            if (success) {
+                                Log.d(TAG, "clickNodeAt succeeded on ${targetNode.className}")
+                                return true
+                            }
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "clickNodeAt error", e)
+            }
+            return false
+        }
+
+        private fun findClickableNode(node: AccessibilityNodeInfo, x: Float, y: Float): AccessibilityNodeInfo? {
+            val rect = Rect()
+            node.getBoundsInScreen(rect)
+            if (!rect.contains(x.toInt(), y.toInt())) {
+                return null
+            }
+            for (i in 0 until node.childCount) {
+                val child = try { node.getChild(i) } catch (_: Exception) { null } ?: continue
+                val found = findClickableNode(child, x, y)
+                if (found != null) return found
+            }
+            if (node.isClickable) return node
+            return null
+        }
+
         fun clickAt(x: Float, y: Float, displayId: Int = 1, callback: (() -> Unit)? = null): Boolean {
             val service = observerInstance
             if (service == null) {
@@ -72,7 +121,7 @@ class AccessibilityObserver : AccessibilityService() {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 builder.setDisplayId(displayId)
             }
-            builder.addStroke(GestureDescription.StrokeDescription(path, 0, 15))
+            builder.addStroke(GestureDescription.StrokeDescription(path, 0, 40))
             val gesture = builder.build()
             val resultCallback = object : AccessibilityService.GestureResultCallback() {
                 override fun onCompleted(gestureDescription: GestureDescription?) {

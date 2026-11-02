@@ -26,7 +26,6 @@ import android.os.VibratorManager
 import android.util.Log
 import android.view.*
 import android.view.animation.DecelerateInterpolator
-import android.widget.FrameLayout
 import android.widget.ImageView
 import androidx.appcompat.view.ContextThemeWrapper
 import com.yopa.os.Version
@@ -40,7 +39,8 @@ class CoverTouchpadManager(
     private val windowManager: WindowManager,
     var onOpenListener: (() -> Unit)? = null,
     var onCloseListener: (() -> Unit)? = null,
-    var onSwipeUpFromBottom: (() -> Unit)? = null
+    var onSwipeUpFromBottom: (() -> Unit)? = null,
+    var onUserInteraction: (() -> Unit)? = null
 ) {
     companion object {
         private const val TAG = "CoverTouchpadManager"
@@ -51,11 +51,7 @@ class CoverTouchpadManager(
     private val themedContext = ContextThemeWrapper(context, R.style.Theme_SecondScreen)
     private val mainHandler = Handler(Looper.getMainLooper())
 
-    // Two-window architecture:
-    // Window 1: cursorOverlayView (visual only, ALWAYS FLAG_NOT_TOUCHABLE, never flickers)
-    // Window 2: touchSurfaceView (transparent touch interceptor, height excludes bottom nav)
-    private var cursorOverlayView: View? = null
-    private var touchSurfaceView: View? = null
+    private var touchpadView: View? = null
     private var ivCursor: ImageView? = null
     private var viewRipple: View? = null
 
@@ -69,9 +65,12 @@ class CoverTouchpadManager(
     private var screenHeight = 512
 
     private val density = themedContext.resources.displayMetrics.density
+    private val tipOffsetX = 0f
+    private val tipOffsetY = 0f
+
     private var currentBottomOffsetPx: Int = (54f * density).toInt()
 
-    // State guards to prevent touch leaks and collision
+    // State guards to prevent touch leaks and conflicting gestures
     private var isExecutingClick = false
     private var isExecutingScroll = false
     private var isPhysicalFingerDown = false
@@ -85,9 +84,7 @@ class CoverTouchpadManager(
     private var isDoubleTapDragging = false
     private var scrollAccumulatorY = 0f
 
-    // Edge & bottom gesture state
-    private var isEdgeGestureLeft = false
-    private var isEdgeGestureRight = false
+    // Bottom gesture state (swipe up reveals bottom nav)
     private var isBottomGesture = false
 
     private val vibrator: Vibrator by lazy {
@@ -105,16 +102,16 @@ class CoverTouchpadManager(
 
     fun updateBottomNavOffset(offsetPx: Int) {
         currentBottomOffsetPx = offsetPx
-        val surface = touchSurfaceView ?: return
-        val params = surface.layoutParams as? WindowManager.LayoutParams ?: return
+        val view = touchpadView ?: return
+        val params = view.layoutParams as? WindowManager.LayoutParams ?: return
         val newHeight = (screenHeight - offsetPx).coerceAtLeast(100)
         if (params.height != newHeight) {
             params.height = newHeight
             try {
-                windowManager.updateViewLayout(surface, params)
-                Log.d(TAG, "Updated touchSurface height: ${newHeight}px (offset: ${offsetPx}px)")
+                windowManager.updateViewLayout(view, params)
+                Log.d(TAG, "Updated touchpadView height: ${newHeight}px (offset: ${offsetPx}px)")
             } catch (e: Exception) {
-                Log.e(TAG, "Error updating surface height", e)
+                Log.e(TAG, "Error updating touchpadView height", e)
             }
         }
     }
@@ -133,11 +130,20 @@ class CoverTouchpadManager(
         cursorY = screenHeight / 2f
 
         try {
-            // 1. Create and attach Touch Surface Window (Window 2)
-            val surface = View(themedContext).apply {
-                setBackgroundColor(0) // completely transparent
+            val view = LayoutInflater.from(themedContext).inflate(R.layout.layout_cover_touchpad, null)
+            touchpadView = view
+
+            ivCursor = view.findViewById(R.id.iv_cursor_pointer)
+            viewRipple = view.findViewById(R.id.view_click_ripple)
+            val surface = view.findViewById<View>(R.id.touchpad_surface)
+
+            ivCursor?.x = cursorX - tipOffsetX
+            ivCursor?.y = cursorY - tipOffsetY
+
+            view.post {
+                if (view.width > 0) screenWidth = view.width
+                if (view.height > 0) screenHeight = view.height
             }
-            touchSurfaceView = surface
 
             var downX = 0f
             var downY = 0f
@@ -149,8 +155,8 @@ class CoverTouchpadManager(
             var twoFingerStartY = 0f
 
             surface.setOnTouchListener { _, event ->
-                // CRITICAL: Filter out any synthetic/accessibility touches
-                if (event.deviceId < 0 || (event.flags and 0x800) != 0) {
+                // Filter out virtual injected touches
+                if (event.deviceId < 0) {
                     return@setOnTouchListener false
                 }
 
@@ -160,8 +166,8 @@ class CoverTouchpadManager(
                 when (event.actionMasked) {
                     MotionEvent.ACTION_DOWN -> {
                         isPhysicalFingerDown = true
+                        onUserInteraction?.invoke()
 
-                        // If touchable restore was pending, restore immediately
                         if (isExecutingClick) {
                             restoreTouchable()
                         }
@@ -184,10 +190,8 @@ class CoverTouchpadManager(
                         } else {
                             isDoubleTapCandidate = false
                             isDoubleTapDragging = false
-                            // Check edge zones
-                            isEdgeGestureLeft = downX <= (28f * density)
-                            isEdgeGestureRight = downX >= screenWidth - (28f * density)
-                            isBottomGesture = downY >= (screenHeight - currentBottomOffsetPx) - (24f * density)
+                            // Check bottom zone (swipe up reveals bottom nav)
+                            isBottomGesture = downY >= (screenHeight - currentBottomOffsetPx) - (20f * density)
                         }
                         true
                     }
@@ -207,7 +211,7 @@ class CoverTouchpadManager(
                         if (isTwoFinger && event.pointerCount >= 2) {
                             val currentTwoFingerY = (event.getY(0) + event.getY(1)) / 2f
                             val dy = currentTwoFingerY - twoFingerStartY
-                            if (abs(dy) > 12f) {
+                            if (abs(dy) > 8f) {
                                 twoFingerStartY = currentTwoFingerY
                                 performScroll(dy)
                             }
@@ -228,7 +232,7 @@ class CoverTouchpadManager(
                                 lastX = event.rawX
                                 lastY = event.rawY
 
-                                if (abs(scrollAccumulatorY) > 12f) {
+                                if (abs(scrollAccumulatorY) > 8f) {
                                     val scrollDy = scrollAccumulatorY
                                     scrollAccumulatorY = 0f
                                     performScroll(scrollDy)
@@ -237,35 +241,11 @@ class CoverTouchpadManager(
                             }
                         }
 
-                        // C. Edge Back Gestures (swipe inward from left/right edge)
-                        if (isEdgeGestureLeft) {
-                            val dx = event.rawX - downX
-                            val dy = abs(event.rawY - downY)
-                            if (dx > (30f * density) && dx > dy * 1.2f) {
-                                isEdgeGestureLeft = false
-                                vibrateClick()
-                                hideTouchpad()
-                                AccessibilityObserver.performBackAction()
-                                return@setOnTouchListener true
-                            }
-                        }
-                        if (isEdgeGestureRight) {
-                            val dx = downX - event.rawX
-                            val dy = abs(event.rawY - downY)
-                            if (dx > (30f * density) && dx > dy * 1.2f) {
-                                isEdgeGestureRight = false
-                                vibrateClick()
-                                hideTouchpad()
-                                AccessibilityObserver.performBackAction()
-                                return@setOnTouchListener true
-                            }
-                        }
-
-                        // D. Bottom Edge Swipe Up: Bring up navigation bar
+                        // C. Bottom Edge Swipe Up: Bring up navigation bar
                         if (isBottomGesture) {
                             val dy = downY - event.rawY
                             val dx = abs(event.rawX - downX)
-                            if (dy > (18f * density) && dy > dx * 1.2f) {
+                            if (dy > (16f * density) && dy > dx * 1.2f) {
                                 isBottomGesture = false
                                 vibrateClick()
                                 onSwipeUpFromBottom?.invoke()
@@ -273,7 +253,7 @@ class CoverTouchpadManager(
                             }
                         }
 
-                        // E. Normal cursor movement
+                        // D. Normal cursor movement across entire screen
                         val dx = (event.rawX - lastX) * SENSITIVITY
                         val dy = (event.rawY - lastY) * SENSITIVITY
 
@@ -282,11 +262,11 @@ class CoverTouchpadManager(
                             hasMoved = true
                         }
 
-                        cursorX = (cursorX + dx).coerceIn(0f, screenWidth.toFloat())
-                        cursorY = (cursorY + dy).coerceIn(0f, screenHeight.toFloat())
+                        cursorX = (cursorX + dx).coerceIn(1f, (screenWidth - 1).toFloat())
+                        cursorY = (cursorY + dy).coerceIn(1f, (screenHeight - 1).toFloat())
 
-                        ivCursor?.x = cursorX
-                        ivCursor?.y = cursorY
+                        ivCursor?.x = cursorX - tipOffsetX
+                        ivCursor?.y = cursorY - tipOffsetY
 
                         lastX = event.rawX
                         lastY = event.rawY
@@ -305,8 +285,8 @@ class CoverTouchpadManager(
                             return@setOnTouchListener true
                         }
 
-                        // Double tap without drag -> perform immediate second click at cursor
-                        if (isDoubleTapCandidate && !hasMoved && totalDist <= touchSlop) {
+                        // Double tap without drag -> perform second click at cursor
+                        if (isDoubleTapCandidate && !hasMoved && totalDist <= (touchSlop * 2.0f)) {
                             isDoubleTapCandidate = false
                             lastTapTime = 0L
                             performClickAt(cursorX, cursorY)
@@ -314,7 +294,7 @@ class CoverTouchpadManager(
                         }
 
                         // Normal single tap or long click
-                        if (!isTwoFinger && !hasMoved && totalDist <= touchSlop) {
+                        if (!isTwoFinger && !hasMoved && totalDist <= (touchSlop * 2.0f)) {
                             if (duration < 350) {
                                 performClickAt(cursorX, cursorY)
                                 lastTapTime = now
@@ -330,8 +310,6 @@ class CoverTouchpadManager(
                         isTwoFinger = false
                         isDoubleTapCandidate = false
                         isDoubleTapDragging = false
-                        isEdgeGestureLeft = false
-                        isEdgeGestureRight = false
                         isBottomGesture = false
                         true
                     }
@@ -342,8 +320,6 @@ class CoverTouchpadManager(
                         isDoubleTapDragging = false
                         hasMoved = false
                         isTwoFinger = false
-                        isEdgeGestureLeft = false
-                        isEdgeGestureRight = false
                         isBottomGesture = false
                         true
                     }
@@ -351,10 +327,11 @@ class CoverTouchpadManager(
                 }
             }
 
-            val surfaceHeight = (screenHeight - currentBottomOffsetPx).coerceAtLeast(100)
-            val surfaceParams = WindowManager.LayoutParams(
+            // Window height covers area above bottom navigation bar
+            val initialHeight = (screenHeight - currentBottomOffsetPx).coerceAtLeast(100)
+            val params = WindowManager.LayoutParams(
                 WindowManager.LayoutParams.MATCH_PARENT,
-                surfaceHeight,
+                initialHeight,
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                         WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
@@ -365,45 +342,14 @@ class CoverTouchpadManager(
                 x = 0
                 y = 0
             }
-            windowManager.addView(surface, surfaceParams)
 
-            // 2. Create and attach Cursor Visual Window (Window 1)
-            // ALWAYS FLAG_NOT_TOUCHABLE: never intercepts touches, never flickers
-            val cursorView = LayoutInflater.from(themedContext).inflate(R.layout.layout_cover_touchpad, null)
-            cursorOverlayView = cursorView
-            ivCursor = cursorView.findViewById(R.id.iv_cursor_pointer)
-            viewRipple = cursorView.findViewById(R.id.view_click_ripple)
-
-            ivCursor?.x = cursorX
-            ivCursor?.y = cursorY
-
-            cursorView.post {
-                if (cursorView.width > 0) screenWidth = cursorView.width
-                if (cursorView.height > 0) screenHeight = cursorView.height
-            }
-
-            val cursorParams = WindowManager.LayoutParams(
-                WindowManager.LayoutParams.MATCH_PARENT,
-                WindowManager.LayoutParams.MATCH_PARENT,
-                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                        WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
-                        WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
-                        WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
-                PixelFormat.TRANSLUCENT
-            ).apply {
-                gravity = Gravity.TOP or Gravity.START
-                x = 0
-                y = 0
-            }
-            windowManager.addView(cursorView, cursorParams)
-
+            windowManager.addView(view, params)
             isShowing = true
             vibrateClick()
             onOpenListener?.invoke()
-            Log.d(TAG, "Touchpad windows attached successfully (${screenWidth}x$screenHeight)")
+            Log.d(TAG, "Touchpad overlay attached successfully (${screenWidth}x$initialHeight)")
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to attach touchpad windows", e)
+            Log.e(TAG, "Failed to attach touchpad overlay", e)
             hideTouchpad()
         }
     }
@@ -414,148 +360,129 @@ class CoverTouchpadManager(
             return
         }
 
-        // Instant visual and haptic response
+        if (isExecutingClick) {
+            Log.d(TAG, "performClickAt: already executing click, skipping")
+            return
+        }
+
+        isExecutingClick = true
         triggerClickRipple(x, y)
         vibrateClick()
 
-        val surface = touchSurfaceView ?: return
-        val params = surface.layoutParams as? WindowManager.LayoutParams ?: return
+        // 1. Try semantic node click first (instant, 0ms lag, zero leak, native)
+        val nodeClicked = AccessibilityObserver.clickNodeAt(x, y, displayId = 1)
+        if (nodeClicked) {
+            Log.d(TAG, "performClickAt: node click succeeded at ($x, $y)")
+            isExecutingClick = false
+            return
+        }
 
-        isExecutingClick = true
+        // 2. Fallback: MotionEvent injection via dispatchGesture
+        val view = touchpadView ?: run {
+            isExecutingClick = false
+            return
+        }
+        val params = view.layoutParams as? WindowManager.LayoutParams ?: run {
+            isExecutingClick = false
+            return
+        }
 
-        // 1. Make touch surface untouchable
         params.flags = params.flags or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
         try {
-            windowManager.updateViewLayout(surface, params)
+            windowManager.updateViewLayout(view, params)
         } catch (e: Exception) {
             Log.e(TAG, "Error setting FLAG_NOT_TOUCHABLE", e)
             isExecutingClick = false
             return
         }
 
-        // 2. Dispatch click after 16ms (1 frame for WMS to sync flags)
+        var finished = false
+        val finishAction = {
+            if (!finished) {
+                finished = true
+                mainHandler.post { restoreTouchable() }
+            }
+        }
+
+        restoreTimeoutRunnable?.let { mainHandler.removeCallbacks(it) }
+        val timeoutAction = Runnable { finishAction() }
+        restoreTimeoutRunnable = timeoutAction
+        mainHandler.postDelayed(timeoutAction, 160)
+
         mainHandler.postDelayed({
-            // If user touched down again during these 16ms, abort immediately to prevent leak!
             if (isPhysicalFingerDown) {
-                Log.w(TAG, "Physical touch detected before click injection, aborting")
-                restoreTouchable()
+                Log.w(TAG, "Physical touch down before click injection, aborting")
+                finishAction()
                 return@postDelayed
             }
 
-            var finished = false
-            val finishAction = {
-                if (!finished) {
-                    finished = true
-                    mainHandler.post { restoreTouchable() }
-                }
-            }
-
-            // Safety watchdog: unconditionally restore touchable in 40ms max!
-            restoreTimeoutRunnable?.let { mainHandler.removeCallbacks(it) }
-            val timeoutAction = Runnable { finishAction() }
-            restoreTimeoutRunnable = timeoutAction
-            mainHandler.postDelayed(timeoutAction, 40)
-
-            // Inject 15ms tap at exact cursor coordinates
             val dispatched = AccessibilityObserver.clickAt(x, y, displayId = 1) {
                 finishAction()
             }
-
             if (!dispatched) {
                 Log.w(TAG, "AccessibilityObserver.clickAt returned false")
                 finishAction()
             }
-        }, 16)
+        }, 50)
     }
 
     private fun performLongClickAt(x: Float, y: Float) {
         if (isPhysicalFingerDown) return
+        if (isExecutingClick) return
 
+        isExecutingClick = true
         triggerClickRipple(x, y)
         vibrateHeavy()
 
-        val surface = touchSurfaceView ?: return
-        val params = surface.layoutParams as? WindowManager.LayoutParams ?: return
-
-        isExecutingClick = true
+        val view = touchpadView ?: run {
+            isExecutingClick = false
+            return
+        }
+        val params = view.layoutParams as? WindowManager.LayoutParams ?: run {
+            isExecutingClick = false
+            return
+        }
 
         params.flags = params.flags or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
         try {
-            windowManager.updateViewLayout(surface, params)
+            windowManager.updateViewLayout(view, params)
         } catch (e: Exception) {
             Log.e(TAG, "Error setting FLAG_NOT_TOUCHABLE", e)
             isExecutingClick = false
             return
         }
 
+        var finished = false
+        val finishAction = {
+            if (!finished) {
+                finished = true
+                mainHandler.post { restoreTouchable() }
+            }
+        }
+
+        restoreTimeoutRunnable?.let { mainHandler.removeCallbacks(it) }
+        val timeoutAction = Runnable { finishAction() }
+        restoreTimeoutRunnable = timeoutAction
+        mainHandler.postDelayed(timeoutAction, 600)
+
         mainHandler.postDelayed({
             if (isPhysicalFingerDown) {
-                restoreTouchable()
+                finishAction()
                 return@postDelayed
             }
-
-            var finished = false
-            val finishAction = {
-                if (!finished) {
-                    finished = true
-                    mainHandler.post { restoreTouchable() }
-                }
-            }
-
-            restoreTimeoutRunnable?.let { mainHandler.removeCallbacks(it) }
-            val timeoutAction = Runnable { finishAction() }
-            restoreTimeoutRunnable = timeoutAction
-            mainHandler.postDelayed(timeoutAction, 450)
 
             val dispatched = AccessibilityObserver.longClickAt(x, y, displayId = 1) {
                 finishAction()
             }
-
             if (!dispatched) {
                 finishAction()
             }
-        }, 16)
+        }, 50)
     }
 
     private fun performScroll(dy: Float) {
         if (isExecutingClick || isExecutingScroll) return
-
-        // 1. Semantic scroll via AccessibilityNodeInfo
-        // Zero FLAG_NOT_TOUCHABLE, zero touch leak, works directly on RecyclerView / ScrollView!
-        val scrolledViaNode = AccessibilityObserver.scrollAt(cursorX, cursorY, dy, displayId = 1)
-        if (scrolledViaNode) {
-            return
-        }
-
-        // 2. Fallback: swipe gesture
-        isExecutingScroll = true
-        val startY = cursorY.coerceIn(40f, screenHeight - 40f)
-        val endY = (startY + dy * 2.0f).coerceIn(10f, screenHeight - 10f)
-
-        val surface = touchSurfaceView ?: run {
-            isExecutingScroll = false
-            return
-        }
-        val params = surface.layoutParams as? WindowManager.LayoutParams ?: run {
-            isExecutingScroll = false
-            return
-        }
-
-        params.flags = params.flags or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
-        try {
-            windowManager.updateViewLayout(surface, params)
-        } catch (_: Exception) {}
-
-        mainHandler.postDelayed({
-            AccessibilityObserver.swipeAt(cursorX, startY, cursorX, endY, durationMs = 60, displayId = 1) {
-                restoreTouchable()
-                isExecutingScroll = false
-            }
-            mainHandler.postDelayed({
-                restoreTouchable()
-                isExecutingScroll = false
-            }, 80)
-        }, 16)
+        AccessibilityObserver.scrollAt(cursorX, cursorY, dy, displayId = 1)
     }
 
     private fun restoreTouchable() {
@@ -563,13 +490,13 @@ class CoverTouchpadManager(
         restoreTimeoutRunnable = null
         isExecutingClick = false
 
-        val surface = touchSurfaceView ?: return
-        val params = surface.layoutParams as? WindowManager.LayoutParams ?: return
+        val view = touchpadView ?: return
+        val params = view.layoutParams as? WindowManager.LayoutParams ?: return
 
         if ((params.flags and WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE) != 0) {
             params.flags = params.flags and WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE.inv()
             try {
-                windowManager.updateViewLayout(surface, params)
+                windowManager.updateViewLayout(view, params)
             } catch (e: Exception) {
                 Log.e(TAG, "Error restoring touchable flags", e)
             }
@@ -601,17 +528,11 @@ class CoverTouchpadManager(
         if (!isShowing) return
         restoreTouchable()
         try {
-            touchSurfaceView?.let { windowManager.removeView(it) }
+            touchpadView?.let { windowManager.removeView(it) }
         } catch (e: Exception) {
-            Log.w(TAG, "Error removing touch surface view", e)
+            Log.w(TAG, "Error removing touchpad view", e)
         }
-        try {
-            cursorOverlayView?.let { windowManager.removeView(it) }
-        } catch (e: Exception) {
-            Log.w(TAG, "Error removing cursor overlay view", e)
-        }
-        touchSurfaceView = null
-        cursorOverlayView = null
+        touchpadView = null
         ivCursor = null
         viewRipple = null
         isShowing = false
@@ -638,23 +559,39 @@ class CoverTouchpadManager(
         onOpenListener = null
         onCloseListener = null
         onSwipeUpFromBottom = null
+        onUserInteraction = null
     }
 
     private fun vibrateClick() {
         try {
-            vibrator.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK))
+            if (Version.isSnowCone) {
+                vibrator.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK))
+            } else {
+                @Suppress("deprecation")
+                vibrator.vibrate(20)
+            }
         } catch (_: Exception) {}
     }
 
     private fun vibrateTick() {
         try {
-            vibrator.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_TICK))
+            if (Version.isSnowCone) {
+                vibrator.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_TICK))
+            } else {
+                @Suppress("deprecation")
+                vibrator.vibrate(10)
+            }
         } catch (_: Exception) {}
     }
 
     private fun vibrateHeavy() {
         try {
-            vibrator.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_HEAVY_CLICK))
+            if (Version.isSnowCone) {
+                vibrator.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_HEAVY_CLICK))
+            } else {
+                @Suppress("deprecation")
+                vibrator.vibrate(50)
+            }
         } catch (_: Exception) {}
     }
 }

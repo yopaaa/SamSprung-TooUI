@@ -17,6 +17,7 @@ package com.yopa.view
 import android.content.Context
 import android.graphics.PixelFormat
 import android.view.Gravity
+import android.view.View
 import android.view.WindowManager
 
 class EdgeBackGestureManager(
@@ -27,6 +28,7 @@ class EdgeBackGestureManager(
     private var leftEdgeView: EdgeGestureView? = null
     private var rightEdgeView: EdgeGestureView? = null
     private var isAttached = false
+    private var isEdgesTouchable = true
 
     fun attach() {
         if (isAttached) return
@@ -36,6 +38,15 @@ class EdgeBackGestureManager(
 
         val leftParams = createLayoutParams(Gravity.START or Gravity.FILL_VERTICAL, left.getIdleWidth())
         val rightParams = createLayoutParams(Gravity.END or Gravity.FILL_VERTICAL, right.getIdleWidth())
+
+        if (!isEdgesTouchable) {
+            leftParams.flags = leftParams.flags or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
+            rightParams.flags = rightParams.flags or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
+            left.isGestureEnabled = false
+            right.isGestureEnabled = false
+            left.visibility = View.GONE
+            right.visibility = View.GONE
+        }
 
         try {
             windowManager.addView(left, leftParams)
@@ -77,12 +88,19 @@ class EdgeBackGestureManager(
         isAttached = false
     }
 
-    fun setLeftEdgeEnabled(enabled: Boolean) {
-        val view = leftEdgeView ?: return
-        view.isGestureEnabled = enabled
+    fun setEdgesTouchable(touchable: Boolean) {
+        isEdgesTouchable = touchable
+        setEdgeTouchable(leftEdgeView, touchable)
+        setEdgeTouchable(rightEdgeView, touchable)
+    }
+
+    private fun setEdgeTouchable(view: EdgeGestureView?, touchable: Boolean) {
+        if (view == null) return
+        view.isGestureEnabled = touchable
+        view.visibility = if (touchable) View.VISIBLE else View.GONE
         try {
             val params = view.layoutParams as? WindowManager.LayoutParams ?: return
-            val flags = if (enabled) {
+            val flags = if (touchable) {
                 params.flags and WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE.inv()
             } else {
                 params.flags or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
@@ -92,6 +110,10 @@ class EdgeBackGestureManager(
                 windowManager.updateViewLayout(view, params)
             }
         } catch (_: Exception) {}
+    }
+
+    fun setLeftEdgeEnabled(enabled: Boolean) {
+        setEdgeTouchable(leftEdgeView, enabled)
     }
 
     private fun createLayoutParams(gravity: Int, width: Int): WindowManager.LayoutParams {

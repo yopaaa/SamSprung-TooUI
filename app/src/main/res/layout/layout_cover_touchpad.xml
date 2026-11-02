@@ -5,6 +5,13 @@
     android:layout_height="match_parent"
     android:background="@android:color/transparent">
 
+    <!-- Touch surface: fills the touchpad window -->
+    <View
+        android:id="@+id/touchpad_surface"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@android:color/transparent" />
+
     <!-- Visual click ripple indicator (animated on tap) -->
     <View
         android:id="@+id/view_click_ripple"

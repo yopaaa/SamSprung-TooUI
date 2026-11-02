@@ -285,10 +285,19 @@ class AppDisplayListener : Service() {
                 onOpenListener = {
                     updateCursorButtonTint()
                     bottomSheetBehavior.state = BottomSheetBehavior.STATE_COLLAPSED
+                    edgeGestureManager?.setEdgesTouchable(false)
                 }
-                onCloseListener = { updateCursorButtonTint() }
+                onCloseListener = {
+                    updateCursorButtonTint()
+                    edgeGestureManager?.setEdgesTouchable(true)
+                }
                 onSwipeUpFromBottom = {
                     bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
+                }
+                onUserInteraction = {
+                    if (bottomSheetBehavior.state == BottomSheetBehavior.STATE_EXPANDED) {
+                        bottomSheetBehavior.state = BottomSheetBehavior.STATE_COLLAPSED
+                    }
                 }
             }
             voiceInputManager?.destroy()
@@ -299,7 +308,6 @@ class AppDisplayListener : Service() {
             edgeGestureManager = EdgeBackGestureManager(displayContext, this) {
                 CoverScreenTimeoutManager.userActivity("edge_back")
                 if (touchpadManager?.isShowing == true) {
-                    touchpadManager?.hideTouchpad()
                     return@EdgeBackGestureManager
                 }
                 val now = System.currentTimeMillis()
