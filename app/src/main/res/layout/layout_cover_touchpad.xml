@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/touchpad_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/transparent">
+
+    <!-- Visual click ripple indicator (animated on tap) -->
+    <View
+        android:id="@+id/view_click_ripple"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:background="@drawable/bg_touchpad_ripple"
+        android:visibility="gone" />
+
+    <!-- Compact floating cursor pointer (16dp): tip is at top-left (0, 0) -->
+    <androidx.appcompat.widget.AppCompatImageView
+        android:id="@+id/iv_cursor_pointer"
+        android:layout_width="16dp"
+        android:layout_height="16dp"
+        android:src="@drawable/ic_cursor_pointer_24dp"
+        android:elevation="10dp"
+        android:contentDescription="Cursor Pointer" />
+</FrameLayout>

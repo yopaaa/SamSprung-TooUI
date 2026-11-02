@@ -56,6 +56,161 @@ class AccessibilityObserver : AccessibilityService() {
             return observerInstance
         }
 
+        fun clickAt(x: Float, y: Float, displayId: Int = 1, callback: (() -> Unit)? = null): Boolean {
+            val service = observerInstance
+            if (service == null) {
+                Log.w(TAG, "clickAt failed: observerInstance is null")
+                callback?.invoke()
+                return false
+            }
+
+            val path = Path().apply {
+                moveTo(x, y)
+                lineTo(x + 0.1f, y + 0.1f)
+            }
+            val builder = GestureDescription.Builder()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                builder.setDisplayId(displayId)
+            }
+            builder.addStroke(GestureDescription.StrokeDescription(path, 0, 15))
+            val gesture = builder.build()
+            val resultCallback = object : AccessibilityService.GestureResultCallback() {
+                override fun onCompleted(gestureDescription: GestureDescription?) {
+                    Log.d(TAG, "clickAt completed at ($x, $y)")
+                    callback?.invoke()
+                }
+
+                override fun onCancelled(gestureDescription: GestureDescription?) {
+                    Log.w(TAG, "clickAt cancelled at ($x, $y)")
+                    callback?.invoke()
+                }
+            }
+            return service.dispatchGesture(gesture, resultCallback, Handler(Looper.getMainLooper()))
+        }
+
+        fun longClickAt(x: Float, y: Float, displayId: Int = 1, callback: (() -> Unit)? = null): Boolean {
+            val service = observerInstance
+            if (service == null) {
+                Log.w(TAG, "longClickAt failed: observerInstance is null")
+                callback?.invoke()
+                return false
+            }
+
+            val path = Path().apply {
+                moveTo(x, y)
+                lineTo(x + 0.1f, y + 0.1f)
+            }
+            val builder = GestureDescription.Builder()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                builder.setDisplayId(displayId)
+            }
+            builder.addStroke(GestureDescription.StrokeDescription(path, 0, 400))
+            val gesture = builder.build()
+            val resultCallback = object : AccessibilityService.GestureResultCallback() {
+                override fun onCompleted(gestureDescription: GestureDescription?) {
+                    Log.d(TAG, "longClickAt completed at ($x, $y)")
+                    callback?.invoke()
+                }
+
+                override fun onCancelled(gestureDescription: GestureDescription?) {
+                    Log.w(TAG, "longClickAt cancelled at ($x, $y)")
+                    callback?.invoke()
+                }
+            }
+            return service.dispatchGesture(gesture, resultCallback, Handler(Looper.getMainLooper()))
+        }
+
+        fun scrollAt(x: Float, y: Float, dy: Float, displayId: Int = 1): Boolean {
+            val service = observerInstance ?: return false
+            try {
+                val action = if (dy < 0) {
+                    AccessibilityNodeInfo.ACTION_SCROLL_FORWARD
+                } else {
+                    AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD
+                }
+
+                val targetWindows = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    try { service.windows.filter { it.displayId == displayId } } catch (_: Exception) { emptyList() }
+                } else {
+                    emptyList()
+                }
+
+                for (window in targetWindows) {
+                    val root = try { window.root } catch (_: Exception) { null } ?: continue
+                    val scrollNode = findScrollableNode(root, x, y)
+                    if (scrollNode != null) {
+                        val success = scrollNode.performAction(action)
+                        if (success) {
+                            Log.d(TAG, "scrollAt: node scroll succeeded (dy=$dy)")
+                            return true
+                        }
+                    }
+                }
+
+                val activeRoot = try { service.rootInActiveWindow } catch (_: Exception) { null }
+                if (activeRoot != null) {
+                    val scrollNode = findScrollableNode(activeRoot, x, y)
+                    if (scrollNode != null) {
+                        val success = scrollNode.performAction(action)
+                        if (success) {
+                            Log.d(TAG, "scrollAt: activeRoot scroll succeeded (dy=$dy)")
+                            return true
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "scrollAt error", e)
+            }
+            return false
+        }
+
+        private fun findScrollableNode(node: AccessibilityNodeInfo, x: Float, y: Float): AccessibilityNodeInfo? {
+            for (i in 0 until node.childCount) {
+                val child = try { node.getChild(i) } catch (_: Exception) { null } ?: continue
+                val found = findScrollableNode(child, x, y)
+                if (found != null) return found
+            }
+            if (node.isScrollable) {
+                val rect = Rect()
+                node.getBoundsInScreen(rect)
+                if (rect.contains(x.toInt(), y.toInt()) || (rect.width() > 100 && rect.height() > 100)) {
+                    return node
+                }
+            }
+            return null
+        }
+
+        fun swipeAt(startX: Float, startY: Float, endX: Float, endY: Float, durationMs: Long = 200, displayId: Int = 1, callback: (() -> Unit)? = null): Boolean {
+            val service = observerInstance
+            if (service == null) {
+                Log.w(TAG, "swipeAt failed: observerInstance is null")
+                callback?.invoke()
+                return false
+            }
+            val path = Path().apply {
+                moveTo(startX, startY)
+                lineTo(endX, endY)
+            }
+            val builder = GestureDescription.Builder()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                builder.setDisplayId(displayId)
+            }
+            builder.addStroke(GestureDescription.StrokeDescription(path, 0, durationMs))
+            val gesture = builder.build()
+            val resultCallback = object : AccessibilityService.GestureResultCallback() {
+                override fun onCompleted(gestureDescription: GestureDescription?) {
+                    Log.d(TAG, "swipeAt completed from ($startX, $startY) to ($endX, $endY)")
+                    callback?.invoke()
+                }
+
+                override fun onCancelled(gestureDescription: GestureDescription?) {
+                    Log.w(TAG, "swipeAt cancelled from ($startX, $startY) to ($endX, $endY)")
+                    callback?.invoke()
+                }
+            }
+            return service.dispatchGesture(gesture, resultCallback, Handler(Looper.getMainLooper()))
+        }
+
         fun ensureServiceEnabled(context: Context) {
             try {
                 if (!hasEnabledService(context)) {

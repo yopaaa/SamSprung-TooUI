@@ -55,6 +55,7 @@ class AppDisplayListener : Service() {
     private lateinit var bottomSheetBehavior: BottomSheetBehavior<View>
     private var edgeGestureManager: EdgeBackGestureManager? = null
     private var voiceInputManager: CoverVoiceInputManager? = null
+    private var touchpadManager: CoverTouchpadManager? = null
 
     private val prefListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
         if (key == Preferences.prefFloatingVoice) {
@@ -68,9 +69,21 @@ class AppDisplayListener : Service() {
         if (!::floatView.isInitialized) return
         val voiceEnabled = prefs.getBoolean(Preferences.prefFloatingVoice, true)
         floatView.findViewById<ImageView>(R.id.button_voice)?.apply {
-            visibility = if (voiceEnabled) View.VISIBLE else View.INVISIBLE
+            visibility = if (voiceEnabled) View.VISIBLE else View.GONE
             isEnabled = voiceEnabled
             isClickable = voiceEnabled
+        }
+    }
+
+    private fun updateCursorButtonTint() {
+        if (!::floatView.isInitialized) return
+        val cursorBtn = floatView.findViewById<AppCompatImageView>(R.id.button_cursor) ?: return
+        val isShowing = touchpadManager?.isShowing == true
+        if (isShowing) {
+            cursorBtn.setColorFilter(Color.parseColor("#00E676"))
+        } else {
+            val color = prefs.getInt(Preferences.prefColors, Color.rgb(255, 255, 255))
+            cursorBtn.setColorFilter(color)
         }
     }
 
@@ -213,13 +226,23 @@ class AppDisplayListener : Service() {
                     for (i in 0 until icons.childCount) {
                         (icons.getChildAt(i) as? AppCompatImageView)?.setColorFilter(color)
                     }
+                    updateCursorButtonTint()
                     setClickListeners(icons, componentName, launchPackage, launchActivity)
+                    val h = if (bottomSheet.height > 0) bottomSheet.height else (54 * displayContext.resources.displayMetrics.density).toInt()
+                    touchpadManager?.updateBottomNavOffset(h)
                 } else if (newState == BottomSheetBehavior.STATE_COLLAPSED) {
                     icons.isVisible = false
+                    val peek = bottomSheetBehavior.peekHeight
+                    touchpadManager?.updateBottomNavOffset(peek)
                 }
             }
 
-            override fun onSlide(bottomSheet: View, slideOffset: Float) { }
+            override fun onSlide(bottomSheet: View, slideOffset: Float) {
+                val peek = bottomSheetBehavior.peekHeight
+                val full = if (bottomSheet.height > 0) bottomSheet.height else (54 * displayContext.resources.displayMetrics.density).toInt()
+                val currentH = (peek + (full - peek) * slideOffset.coerceIn(0f, 1f)).toInt()
+                touchpadManager?.updateBottomNavOffset(currentH)
+            }
         })
 
         val color = prefs.getInt(
@@ -229,6 +252,7 @@ class AppDisplayListener : Service() {
         for (i in 0 until icons.childCount) {
             (icons.getChildAt(i) as? AppCompatImageView)?.setColorFilter(color)
         }
+        updateCursorButtonTint()
         setClickListeners(icons, componentName, launchPackage, launchActivity)
 
         floatView.findViewById<View>(R.id.bottom_sheet_nav).setOnTouchListener(
@@ -248,6 +272,25 @@ class AppDisplayListener : Service() {
             addView(floatView, params)
             DensityHelper.setDisplayImePolicy(0, 1)
             AccessibilityObserver.ensureServiceEnabled(displayContext)
+            touchpadManager?.destroy()
+            touchpadManager = CoverTouchpadManager(displayContext, this).apply {
+                val isExpanded = bottomSheetBehavior.state == BottomSheetBehavior.STATE_EXPANDED
+                val initialOffset = if (isExpanded) {
+                    val nav = floatView.findViewById<View>(R.id.bottom_sheet_nav)
+                    if (nav != null && nav.height > 0) nav.height else (54 * displayContext.resources.displayMetrics.density).toInt()
+                } else {
+                    bottomSheetBehavior.peekHeight
+                }
+                updateBottomNavOffset(initialOffset)
+                onOpenListener = {
+                    updateCursorButtonTint()
+                    bottomSheetBehavior.state = BottomSheetBehavior.STATE_COLLAPSED
+                }
+                onCloseListener = { updateCursorButtonTint() }
+                onSwipeUpFromBottom = {
+                    bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
+                }
+            }
             voiceInputManager?.destroy()
             voiceInputManager = CoverVoiceInputManager(displayContext, this).apply {
                 attachFloatingButton()
@@ -255,6 +298,10 @@ class AppDisplayListener : Service() {
             edgeGestureManager?.detach()
             edgeGestureManager = EdgeBackGestureManager(displayContext, this) {
                 CoverScreenTimeoutManager.userActivity("edge_back")
+                if (touchpadManager?.isShowing == true) {
+                    touchpadManager?.hideTouchpad()
+                    return@EdgeBackGestureManager
+                }
                 val now = System.currentTimeMillis()
                 val backPerformed = AccessibilityObserver.performBackAction()
                 if (now - lastBackTime < 1800 || !backPerformed) {
@@ -370,16 +417,28 @@ class AppDisplayListener : Service() {
             CoverScreenTimeoutManager.userActivity("nav_voice")
             voiceInputManager?.showVoiceDialog()
         }
+        menu.findViewById<ImageView>(R.id.button_cursor)?.setOnClickListener {
+            if (prefs.getBoolean(Preferences.prefReacts, true))
+                vibrator.vibrate(effectClick)
+            CoverScreenTimeoutManager.userActivity("nav_cursor")
+            bottomSheetBehavior.state = BottomSheetBehavior.STATE_COLLAPSED
+            touchpadManager?.toggleTouchpad()
+        }
         menu.findViewById<ImageView>(R.id.button_home)?.setOnClickListener {
             if (prefs.getBoolean(Preferences.prefReacts, true))
                 vibrator.vibrate(effectClick)
             CoverScreenTimeoutManager.userActivity("nav_home")
+            touchpadManager?.hideTouchpad()
             returnToHome(componentName, launchPackage, launchActivity)
         }
         menu.findViewById<ImageView>(R.id.button_back)?.setOnClickListener {
             if (prefs.getBoolean(Preferences.prefReacts, true))
                 vibrator.vibrate(effectClick)
             CoverScreenTimeoutManager.userActivity("nav_back")
+            if (touchpadManager?.isShowing == true) {
+                touchpadManager?.hideTouchpad()
+                return@setOnClickListener
+            }
             val handled = AccessibilityObserver.performBackAction()
             if (!handled) {
                 returnToHome(componentName, launchPackage, launchActivity)
@@ -427,6 +486,8 @@ class AppDisplayListener : Service() {
 
     fun onDismissOverlay() {
         try { prefs.unregisterOnSharedPreferenceChangeListener(prefListener) } catch (_: Exception) {}
+        touchpadManager?.destroy()
+        touchpadManager = null
         voiceInputManager?.destroy()
         voiceInputManager = null
         edgeGestureManager?.detach()
