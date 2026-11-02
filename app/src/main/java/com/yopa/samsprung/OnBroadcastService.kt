@@ -22,6 +22,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.os.Build
 import android.os.IBinder
 import android.provider.Settings
 import androidx.core.app.NotificationCompat
@@ -39,6 +40,10 @@ class OnBroadcastService : Service() {
         override fun onReceive(context: Context, intent: Intent) {
             if (Intent.ACTION_USER_PRESENT == intent.action
                 || Intent.ACTION_SCREEN_ON == intent.action) {
+                if (com.yopa.samsprung.alarm.AlarmAlertManager.isAlarmRinging()) {
+                    android.util.Log.d("OnBroadcastService", "Alarm is ringing. Skipping TwoUI launch to show native alarm screen.")
+                    return
+                }
                 if (getSharedPreferences(Preferences.prefsValue, MODE_PRIVATE)
                         .getBoolean(Preferences.prefRotate, false)) {
                     OrientationManager.removeOrientationLayout(context)
@@ -48,6 +53,30 @@ class OnBroadcastService : Service() {
                         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
                     CoverOptions(null).getActivityOptions(1).toBundle()
                 )
+            }
+        }
+    }
+
+    private val alarmReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            val action = intent.action ?: return
+            android.util.Log.d("OnBroadcastService", "Alarm intent received: $action")
+            when (action) {
+                "com.samsung.sec.android.clockpackage.alarm.ALARM_ALERT",
+                "com.samsung.sec.android.clockpackage.alarm.ALARM_STARTED_IN_ALERT",
+                "com.samsung.sec.android.clockpackage.alarm.ACTION_LOCAL_ALARM_ALERT_START",
+                "android.intent.action.ALARM_ALERT" -> {
+                    com.yopa.samsprung.alarm.AlarmAlertManager.setAlarmFiring(true, context)
+                }
+                "com.samsung.sec.android.clockpackage.alarm.ALARM_STOP",
+                "com.samsung.sec.android.clockpackage.alarm.ALARM_STOPPED_IN_ALERT",
+                "com.samsung.sec.android.clockpackage.alarm.ACTION_LOCAL_ALARM_ALERT_STOP",
+                "com.samsung.sec.android.clockpackage.alarm.ALARM_NOTIFICATION_CLEAR",
+                "com.samsung.sec.android.clockpackage.alarm.ALARM_NOTIFICATION_DISMISS",
+                "android.intent.action.ALARM_DISMISSED",
+                "android.intent.action.ALARM_SNOOZED" -> {
+                    com.yopa.samsprung.alarm.AlarmAlertManager.setAlarmFiring(false, context)
+                }
             }
         }
     }
@@ -65,17 +94,21 @@ class OnBroadcastService : Service() {
         if (!Settings.canDrawOverlays(applicationContext) || SamSprung.updating == intent?.action) {
             return stopOverlayService()
         } else if (SamSprung.services == intent?.action) {
-            startActivity(
-                Intent(applicationContext, SamSprungOverlay::class.java)
-                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-                CoverOptions(null).getActivityOptions(1).toBundle()
-            )
+            if (!com.yopa.samsprung.alarm.AlarmAlertManager.isAlarmRinging()) {
+                startActivity(
+                    Intent(applicationContext, SamSprungOverlay::class.java)
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                    CoverOptions(null).getActivityOptions(1).toBundle()
+                )
+            }
         } else if (SamSprung.launcher == intent?.action) {
-            startActivity(
-                Intent(applicationContext, SamSprungOverlay::class.java)
-                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK).setAction(SamSprung.launcher),
-                CoverOptions(null).getActivityOptions(1).toBundle()
-            )
+            if (!com.yopa.samsprung.alarm.AlarmAlertManager.isAlarmRinging()) {
+                startActivity(
+                    Intent(applicationContext, SamSprungOverlay::class.java)
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK).setAction(SamSprung.launcher),
+                    CoverOptions(null).getActivityOptions(1).toBundle()
+                )
+            }
         }
         try { applicationContext.unregisterReceiver(onReceiver) } catch (_: Exception) { }
         IntentFilter().apply {
@@ -84,6 +117,27 @@ class OnBroadcastService : Service() {
             priority = 999
         }.also {
             registerReceiver(onReceiver, it)
+        }
+        try { applicationContext.unregisterReceiver(alarmReceiver) } catch (_: Exception) { }
+        val alarmFilter = IntentFilter().apply {
+            addAction("com.samsung.sec.android.clockpackage.alarm.ALARM_ALERT")
+            addAction("com.samsung.sec.android.clockpackage.alarm.ALARM_STARTED_IN_ALERT")
+            addAction("com.samsung.sec.android.clockpackage.alarm.ACTION_LOCAL_ALARM_ALERT_START")
+            addAction("android.intent.action.ALARM_ALERT")
+            addAction("com.samsung.sec.android.clockpackage.alarm.ALARM_STOP")
+            addAction("com.samsung.sec.android.clockpackage.alarm.ALARM_STOPPED_IN_ALERT")
+            addAction("com.samsung.sec.android.clockpackage.alarm.ACTION_LOCAL_ALARM_ALERT_STOP")
+            addAction("com.samsung.sec.android.clockpackage.alarm.ALARM_NOTIFICATION_CLEAR")
+            addAction("com.samsung.sec.android.clockpackage.alarm.ALARM_NOTIFICATION_DISMISS")
+            addAction("android.intent.action.ALARM_DISMISSED")
+            addAction("android.intent.action.ALARM_SNOOZED")
+            priority = 999
+        }
+        @Suppress("UnspecifiedRegisterReceiverFlag")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(alarmReceiver, alarmFilter, RECEIVER_EXPORTED)
+        } else {
+            registerReceiver(alarmReceiver, alarmFilter)
         }
         return START_STICKY
     }
@@ -129,6 +183,7 @@ class OnBroadcastService : Service() {
 
     private fun stopOverlayService(): Int {
         try { unregisterReceiver(onReceiver) } catch (_: Exception) { }
+        try { unregisterReceiver(alarmReceiver) } catch (_: Exception) { }
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
         return START_NOT_STICKY

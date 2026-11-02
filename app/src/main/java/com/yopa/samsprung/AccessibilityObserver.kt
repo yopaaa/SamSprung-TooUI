@@ -629,6 +629,15 @@ class AccessibilityObserver : AccessibilityService() {
             }
             AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
                 val pkg = event.packageName?.toString()
+                val cls = event.className?.toString() ?: ""
+                if (pkg == "com.sec.android.app.clockpackage") {
+                    if (cls.contains("Alert", ignoreCase = true) ||
+                        cls.contains("Alarm", ignoreCase = true) ||
+                        cls.contains("Cover", ignoreCase = true)) {
+                        Log.d(TAG, "Samsung Clock Alarm window detected: $cls. Hiding TwoUI!")
+                        com.yopa.samsprung.alarm.AlarmAlertManager.setAlarmFiring(true, this)
+                    }
+                }
                 if (pkg != null && pkg != packageName && !pkg.startsWith("com.android.systemui")) {
                     com.yopa.samsprung.drawer.CoverScreenTimeoutManager.setCurrentForegroundPackage(pkg)
                 }

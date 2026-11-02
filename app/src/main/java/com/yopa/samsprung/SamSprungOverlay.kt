@@ -166,12 +166,6 @@ class SamSprungOverlay : AppCompatActivity() {
     private var edgeGestureManager: EdgeBackGestureManager? = null
     private var coverQuickTilesAdapter: CoverQuickTilesAdapter? = null
 
-    private var alarmAlertOverlay: View? = null
-    private var tvAlarmAlertTime: TextView? = null
-    private var tvAlarmAlertLabel: TextView? = null
-    private var btnAlarmDismiss: View? = null
-    private var btnAlarmSnooze: View? = null
-
     private val vibrator: Vibrator by lazy {
         if (Version.isSnowCone)
             with (getSystemService(VIBRATOR_MANAGER_SERVICE) as VibratorManager) { defaultVibrator }
@@ -220,6 +214,12 @@ class SamSprungOverlay : AppCompatActivity() {
 
     @SuppressLint("ClickableViewAccessibility", "MissingPermission")
     override fun onCreate(savedInstanceState: Bundle?) {
+        if (com.yopa.samsprung.alarm.AlarmAlertManager.isAlarmRinging()) {
+            super.onCreate(savedInstanceState)
+            finish()
+            return
+        }
+        instance = this
         setShowWhenLocked(true)
         // setTurnScreenOn(true)
 
@@ -532,39 +532,6 @@ class SamSprungOverlay : AppCompatActivity() {
         coordinator.visibility = View.VISIBLE
         coordinator.alpha = 1.0f
         viewPager.setCurrentItem(1, false)
-
-        alarmAlertOverlay = findViewById(R.id.alarm_alert_overlay)
-        tvAlarmAlertTime = findViewById(R.id.tv_alarm_alert_time)
-        tvAlarmAlertLabel = findViewById(R.id.tv_alarm_alert_label)
-        btnAlarmDismiss = findViewById(R.id.btn_alarm_dismiss)
-        btnAlarmSnooze = findViewById(R.id.btn_alarm_snooze)
-
-        btnAlarmDismiss?.setOnClickListener {
-            com.yopa.samsprung.alarm.AlarmAlertManager.dismissAlarm(this)
-            alarmAlertOverlay?.visibility = View.GONE
-        }
-
-        btnAlarmSnooze?.setOnClickListener {
-            com.yopa.samsprung.alarm.AlarmAlertManager.snoozeAlarm(this)
-            alarmAlertOverlay?.visibility = View.GONE
-        }
-
-        com.yopa.samsprung.alarm.AlarmAlertManager.setListener(object : com.yopa.samsprung.alarm.AlarmAlertManager.AlarmAlertListener {
-            override fun onAlarmFiring(alarm: com.yopa.samsprung.alarm.AlarmAlertManager.FiringAlarm) {
-                runOnUiThread {
-                    tvAlarmAlertTime?.text = alarm.timeText
-                    tvAlarmAlertLabel?.text = alarm.label
-                    alarmAlertOverlay?.visibility = View.VISIBLE
-                    com.yopa.samsprung.drawer.CoverScreenTimeoutManager.userActivity("alarm_firing")
-                }
-            }
-
-            override fun onAlarmDismissed(alarmKey: String) {
-                runOnUiThread {
-                    alarmAlertOverlay?.visibility = View.GONE
-                }
-            }
-        })
 
         setScreenTimeout(findViewById(R.id.bottom_sheet_main))
 
@@ -1077,6 +1044,19 @@ class SamSprungOverlay : AppCompatActivity() {
 
     companion object {
         const val APPWIDGET_HOST_ID = SamSprung.request_code
+        private var instance: SamSprungOverlay? = null
+        fun getInstance(): SamSprungOverlay? = instance
+
+        fun hideOverlayForAlarm() {
+            val overlay = instance ?: return
+            overlay.runOnUiThread {
+                try {
+                    Log.d("SamSprungOverlay", "Hiding TwoUI for ringing alarm to reveal default system screen")
+                    overlay.moveTaskToBack(true)
+                } catch (_: Exception) {}
+                overlay.onStopOverlay()
+            }
+        }
     }
 
     private fun launchApplication(launchCommand: String, menuButton: FloatingActionButton) {
@@ -1380,7 +1360,9 @@ class SamSprungOverlay : AppCompatActivity() {
 
     public override fun onDestroy() {
         super.onDestroy()
-        com.yopa.samsprung.alarm.AlarmAlertManager.setListener(null)
+        if (instance == this) {
+            instance = null
+        }
         onStopOverlay()
         if (prefs.getBoolean(getString(R.string.toggle_widgets).toPref, true)) {
             try {
@@ -1497,12 +1479,9 @@ class SamSprungOverlay : AppCompatActivity() {
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        if (alarmAlertOverlay?.visibility == View.VISIBLE && event.action == KeyEvent.ACTION_DOWN) {
-            if (event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN || event.keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
-                com.yopa.samsprung.alarm.AlarmAlertManager.dismissAlarm(this)
-                alarmAlertOverlay?.visibility = View.GONE
-                return true
-            }
+        if (com.yopa.samsprung.alarm.AlarmAlertManager.isAlarmRinging()) {
+            hideOverlayForAlarm()
+            return false
         }
         return super.dispatchKeyEvent(event)
     }

@@ -336,6 +336,7 @@ class NotificationAdapter(
     @SuppressLint("NotifyDataSetChanged")
     override fun onActiveNotifications(activeNotifications: ArrayList<StatusBarNotification>) {
         for (sbn in activeNotifications) {
+            if (com.yopa.samsprung.alarm.AlarmAlertManager.isAlarmNotification(sbn)) continue
             if (isValidNotification(sbn.notification.extras) && !isGroupSummary(sbn))
                 sbNotifications.add(sbn)
         }
@@ -343,6 +344,7 @@ class NotificationAdapter(
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
+        if (com.yopa.samsprung.alarm.AlarmAlertManager.isAlarmNotification(sbn)) return
         if (isGroupSummary(sbn) || !isValidNotification(sbn.notification.extras)) return
         var update = -1
         for (index in 0 until sbNotifications.size) {
