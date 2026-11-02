@@ -57,26 +57,31 @@ class NotificationReceiver : NotificationListenerService() {
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         super.onNotificationPosted(sbn)
+        com.yopa.samsprung.alarm.AlarmAlertManager.onNotificationPosted(sbn)
         getReceiver()?.mNotificationsListener?.onNotificationPosted(sbn)
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification, rankingMap: RankingMap) {
         super.onNotificationPosted(sbn, rankingMap)
+        com.yopa.samsprung.alarm.AlarmAlertManager.onNotificationPosted(sbn)
         getReceiver()?.mNotificationsListener?.onNotificationPosted(sbn)
     }
 
     override fun onNotificationRemoved(sbn: StatusBarNotification) {
         super.onNotificationRemoved(sbn)
+        com.yopa.samsprung.alarm.AlarmAlertManager.onNotificationRemoved(sbn)
         getReceiver()?.mNotificationsListener?.onNotificationRemoved(sbn)
     }
 
     override fun onNotificationRemoved(sbn: StatusBarNotification, rankingMap: RankingMap) {
         super.onNotificationRemoved(sbn, rankingMap)
+        com.yopa.samsprung.alarm.AlarmAlertManager.onNotificationRemoved(sbn)
         getReceiver()?.mNotificationsListener?.onNotificationRemoved(sbn)
     }
 
     override fun onNotificationRemoved(sbn: StatusBarNotification, rankingMap: RankingMap, reason: Int) {
         super.onNotificationRemoved(sbn, rankingMap, reason)
+        com.yopa.samsprung.alarm.AlarmAlertManager.onNotificationRemoved(sbn)
         getReceiver()?.mNotificationsListener?.onNotificationRemoved(sbn)
     }
 

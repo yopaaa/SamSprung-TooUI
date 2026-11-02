@@ -17,24 +17,25 @@ package com.yopa.samsprung.drawer
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.viewpager2.adapter.FragmentStateAdapter
+import com.yopa.samsprung.alarm.AlarmListFragment
 
 class CoverStateAdapter(fragmentActivity: AppCompatActivity) : FragmentStateAdapter(fragmentActivity) {
     private val mFragments: ArrayList<PanelViewFragment> = arrayListOf()
     private val mFragmentIDs: ArrayList<Long> = arrayListOf()
-    private var nextUniqueId: Long = 4L
+    private var nextUniqueId: Long = 5L
 
     fun addFragment() : Int {
         val fragment = PanelViewFragment()
         val newId = nextUniqueId++
         mFragments.add(fragment)
         mFragmentIDs.add(newId)
-        val position = mFragmentIDs.size + 3
+        val position = mFragmentIDs.size + 4
         notifyItemInserted(position)
         return position
     }
 
     fun removeFragment(position: Int) {
-        val internalIndex = position - 4
+        val internalIndex = position - 5
         if (internalIndex in 0 until mFragments.size) {
             mFragments.removeAt(internalIndex)
             mFragmentIDs.removeAt(internalIndex)
@@ -45,7 +46,7 @@ class CoverStateAdapter(fragmentActivity: AppCompatActivity) : FragmentStateAdap
     }
 
     fun getFragment(position: Int) : PanelViewFragment {
-        return mFragments[position - 4]
+        return mFragments[position - 5]
     }
 
     override fun createFragment(position: Int): Fragment {
@@ -54,20 +55,21 @@ class CoverStateAdapter(fragmentActivity: AppCompatActivity) : FragmentStateAdap
             1 -> ClockHomeFragment()
             2 -> AppDrawerFragment()
             3 -> RecentAppsFragment()
-            else -> mFragments[position - 4]
+            4 -> AlarmListFragment()
+            else -> mFragments[position - 5]
         }
     }
 
     override fun getItemId(position: Int): Long {
-        return if (position < 4) position.toLong() else mFragmentIDs[position - 4]
+        return if (position < 5) position.toLong() else mFragmentIDs[position - 5]
     }
 
     override fun getItemCount(): Int {
-        return mFragmentIDs.size + 4
+        return mFragmentIDs.size + 5
     }
 
     override fun containsItem(itemId: Long): Boolean {
-        if (itemId in 0L..3L) return true
+        if (itemId in 0L..4L) return true
         return mFragmentIDs.contains(itemId)
     }
 }

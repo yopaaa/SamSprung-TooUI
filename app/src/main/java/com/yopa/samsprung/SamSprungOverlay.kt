@@ -166,6 +166,12 @@ class SamSprungOverlay : AppCompatActivity() {
     private var edgeGestureManager: EdgeBackGestureManager? = null
     private var coverQuickTilesAdapter: CoverQuickTilesAdapter? = null
 
+    private var alarmAlertOverlay: View? = null
+    private var tvAlarmAlertTime: TextView? = null
+    private var tvAlarmAlertLabel: TextView? = null
+    private var btnAlarmDismiss: View? = null
+    private var btnAlarmSnooze: View? = null
+
     private val vibrator: Vibrator by lazy {
         if (Version.isSnowCone)
             with (getSystemService(VIBRATOR_MANAGER_SERVICE) as VibratorManager) { defaultVibrator }
@@ -421,7 +427,7 @@ class SamSprungOverlay : AppCompatActivity() {
         if (prefs.getBoolean(getString(R.string.toggle_widgets).toPref, true)) {
             toolbar.findViewById<View>(R.id.toggle_widgets)
                 .setOnLongClickListener(View.OnLongClickListener {
-                if (viewPager.currentItem > 3) {
+                if (viewPager.currentItem > 4) {
                     toolbar.menu.findItem(R.id.toggle_widgets)
                         .setIcon(R.drawable.ic_delete_forever_24dp)
                     if (prefs.getBoolean(Preferences.prefReacts, true))
@@ -526,6 +532,39 @@ class SamSprungOverlay : AppCompatActivity() {
         coordinator.visibility = View.VISIBLE
         coordinator.alpha = 1.0f
         viewPager.setCurrentItem(1, false)
+
+        alarmAlertOverlay = findViewById(R.id.alarm_alert_overlay)
+        tvAlarmAlertTime = findViewById(R.id.tv_alarm_alert_time)
+        tvAlarmAlertLabel = findViewById(R.id.tv_alarm_alert_label)
+        btnAlarmDismiss = findViewById(R.id.btn_alarm_dismiss)
+        btnAlarmSnooze = findViewById(R.id.btn_alarm_snooze)
+
+        btnAlarmDismiss?.setOnClickListener {
+            com.yopa.samsprung.alarm.AlarmAlertManager.dismissAlarm(this)
+            alarmAlertOverlay?.visibility = View.GONE
+        }
+
+        btnAlarmSnooze?.setOnClickListener {
+            com.yopa.samsprung.alarm.AlarmAlertManager.snoozeAlarm(this)
+            alarmAlertOverlay?.visibility = View.GONE
+        }
+
+        com.yopa.samsprung.alarm.AlarmAlertManager.setListener(object : com.yopa.samsprung.alarm.AlarmAlertManager.AlarmAlertListener {
+            override fun onAlarmFiring(alarm: com.yopa.samsprung.alarm.AlarmAlertManager.FiringAlarm) {
+                runOnUiThread {
+                    tvAlarmAlertTime?.text = alarm.timeText
+                    tvAlarmAlertLabel?.text = alarm.label
+                    alarmAlertOverlay?.visibility = View.VISIBLE
+                    com.yopa.samsprung.drawer.CoverScreenTimeoutManager.userActivity("alarm_firing")
+                }
+            }
+
+            override fun onAlarmDismissed(alarmKey: String) {
+                runOnUiThread {
+                    alarmAlertOverlay?.visibility = View.GONE
+                }
+            }
+        })
 
         setScreenTimeout(findViewById(R.id.bottom_sheet_main))
 
@@ -1341,6 +1380,7 @@ class SamSprungOverlay : AppCompatActivity() {
 
     public override fun onDestroy() {
         super.onDestroy()
+        com.yopa.samsprung.alarm.AlarmAlertManager.setListener(null)
         onStopOverlay()
         if (prefs.getBoolean(getString(R.string.toggle_widgets).toPref, true)) {
             try {
@@ -1454,5 +1494,16 @@ class SamSprungOverlay : AppCompatActivity() {
             }
         }
         return super.dispatchTouchEvent(ev)
+    }
+
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (alarmAlertOverlay?.visibility == View.VISIBLE && event.action == KeyEvent.ACTION_DOWN) {
+            if (event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN || event.keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
+                com.yopa.samsprung.alarm.AlarmAlertManager.dismissAlarm(this)
+                alarmAlertOverlay?.visibility = View.GONE
+                return true
+            }
+        }
+        return super.dispatchKeyEvent(event)
     }
 }
